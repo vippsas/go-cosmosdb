@@ -4,13 +4,13 @@ go sdk for Azure Cosmos DB
 * full support for partitioned collections
 * simple interface
 * supports all operations with both self links and user defined ids
-* naming conventions follow the RestAPI (https://docs.microsoft.com/en-us/rest/api/cosmos-db/)[https://docs.microsoft.com/en-us/rest/api/cosmos-db/]
+* naming conventions follow the RestAPI [https://docs.microsoft.com/en-us/rest/api/cosmos-db/](https://docs.microsoft.com/en-us/rest/api/cosmos-db/)
 * it exposes the raw http responses from cosmosdb. This power comes at some
   responsibility. _Close the response body, always!_
 
 * it more closely follows the api of the official SDKs
-    * (https://docs.microsoft.com/python/api/pydocumentdb?view=azure-python)[python]
-    * (https://docs.microsoft.com/javascript/api/documentdb/?view=azure-node-latest)[node.js]
+    * [https://docs.microsoft.com/python/api/pydocumentdb?view=azure-python](python)
+    * [https://docs.microsoft.com/javascript/api/documentdb/?view=azure-node-latest](node.js)
 
 # Usage
 
