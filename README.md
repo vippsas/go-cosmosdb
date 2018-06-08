@@ -1,12 +1,11 @@
 # go-cosmosdb
 go sdk for Azure Cosmos DB
 
+* no `_self` links
 * full support for partitioned collections
 * simple interface
-* supports all operations with both self links and user defined ids
+* supports all operations with user defined ids
 * naming conventions follow the RestAPI [https://docs.microsoft.com/en-us/rest/api/cosmos-db/](https://docs.microsoft.com/en-us/rest/api/cosmos-db/)
-* it exposes the raw http responses from cosmosdb. This power comes at some
-  responsibility. _Close the response body, always!_
 
 * it more closely follows the api of the official SDKs
     * [https://docs.microsoft.com/python/api/pydocumentdb?view=azure-python](python)
@@ -47,6 +46,3 @@ newDoc, err := coll.CreateDocument(context.Background(), doc)
 
 #FAQ
 
-## Why exposing the raw http response?
-I thought a lot about using a `interface{}` to be generic. However, there are
-different use cases which have to be covered.
