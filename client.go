@@ -9,6 +9,7 @@ import (
 	"io/ioutil"
 	"math/rand"
 	"net/http"
+	"net/url"
 	"strings"
 	"time"
 
@@ -115,7 +116,16 @@ func defaultHeaders(method, link, key string) (map[string]string, error) {
 	h[HEADER_VER] = "2016-07-11"
 	h[HEADER_CROSSPARTITION] = "true"
 
-	// TODO: auth
+	// TODO: get all parts
+	parts := []string{}
+	sign, err := authorize(strings.ToLower(strings.Join(parts, "\n")), key)
+	if err != nil {
+		return h, err
+	}
+
+	masterToken := "master"
+	tokenVersion := "1.0"
+	h[HEADER_AUTH] = url.QueryEscape("type=" + masterToken + "&ver=" + tokenVersion + "&sig=" + sign)
 
 	return h, nil
 }
