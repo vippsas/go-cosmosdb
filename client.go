@@ -15,6 +15,22 @@ import (
 	"github.com/pkg/errors"
 )
 
+const (
+	HEADER_XDATE        = "X-Ms-Date"
+	HEADER_AUTH         = "Authorization"
+	HEADER_VER          = "X-Ms-Version"
+	HEADER_CONTYPE      = "Content-Type"
+	HEADER_CONLEN       = "Content-Length"
+	HEADER_IS_QUERY     = "X-Ms-Documentdb-Isquery"
+	HEADER_UPSERT       = "X-Ms-Documentdb-Is-Upsert"
+	HEADER_CONTINUATION = "X-Ms-Continuation"
+	HEADER_IF_MATCH     = "If-Match"
+	HEADER_CHARGE       = "X-Ms-Request-Charge"
+
+	HEADER_CROSSPARTITION = "x-ms-documentdb-query-enablecrosspartition"
+	HEADER_PARTITIONKEY   = "x-ms-documentdb-partitionkey"
+)
+
 // Client represents a connection to cosmosdb. Not in the sense of a database
 // connection but in the sense of containing all required information to get
 var (
@@ -23,10 +39,6 @@ var (
 	ErrPreconditionFailed = errors.New("precondition failed")
 	ResponseHook          func(ctx context.Context, method string, headers map[string][]string)
 )
-
-type queryKey struct{}
-type sprocKey struct{}
-type collKey struct{}
 
 type Config struct {
 	MasterKey  string
@@ -50,37 +62,31 @@ type Client struct {
 	Client *http.Client
 }
 
-func New() (*Client, error) {
-	return nil, ErrorNotImplemented
-}
+func New(url string, cfg Config, cl *http.Client) *Client {
+	client := &Client{
+		Url:    strings.Trim(url, "/"),
+		Config: cfg,
+		Client: cl,
+	}
 
-type PartitionResolver interface {
-	// Returns partition key from a document
-	GetPartitionKey()
-}
+	if client.Client == nil {
+		client.Client = http.DefaultClient
+	}
 
-// CreateAttachment
-func (c *Client) CreateDatabase(ctx context.Context, uri string, ops *RequestOptions) {}
+	return client
+}
 
 func (c *Client) CreateDocument(ctx context.Context, link string,
 	doc interface{}, ops *RequestOptions) error {
 
-	// add headers: default and options
-
-	// check if collection uses partitions
-	//if pkResolve :=  c.collectionRegister[link]; pkResolve != nil {
-	//pk :=  pkResolve(doc)
-	//}
+	// add optional headers
+	headers := map[string]string{}
+	for k, v := range *ops {
+		headers[string(k)] = v
+	}
 
 	c.create(ctx, link, doc, nil, nil)
 
-	return nil
-}
-
-//func (c *Client) ListDatabases()                                                      {}
-//func (c *Client) GetDatabase()                                                        {}
-
-func do() error {
 	return nil
 }
 
@@ -90,13 +96,6 @@ type RequestOption string
 var (
 	ReqOpAllowCrossPartition = RequestOption("x-ms-documentdb-query-enablecrosspartition")
 )
-
-//type AddressingMode string
-
-//var (
-//AddressingModeSelf = AddressingMode("Self")
-//AddressingModeUser = AddressingMode("User")
-//)
 
 // Create resource
 func (c *Client) create(ctx context.Context, link string, body, ret interface{}, headers map[string]string) error {
@@ -111,7 +110,14 @@ func (c *Client) create(ctx context.Context, link string, body, ret interface{},
 }
 
 func defaultHeaders(method, link, key string) (map[string]string, error) {
-	return nil, ErrorNotImplemented
+	h := map[string]string{}
+	h[HEADER_XDATE] = time.Now().UTC().Format("Mon, 02 Jan 2006 15:04:05 GMT")
+	h[HEADER_VER] = "2016-07-11"
+	h[HEADER_CROSSPARTITION] = "true"
+
+	// TODO: auth
+
+	return h, nil
 }
 
 // Private generic method resource
