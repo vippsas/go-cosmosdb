@@ -60,6 +60,10 @@ func CreateCollLink(dbName, collName string) string {
 	return "dbs/" + dbName + "/colls/" + collName
 }
 
+func CreateDocsLink(dbName, collName string) string {
+	return "dbs/" + dbName + "/colls/" + collName + "/docs"
+}
+
 func New(url string, cfg Config, cl *http.Client) *Client {
 	client := &Client{
 		Url:    strings.Trim(url, "/"),
@@ -111,7 +115,10 @@ func (c *Client) CreateDocument(ctx context.Context, link string,
 		}
 	}
 
-	c.create(ctx, link, doc, nil, nil)
+	err := c.create(ctx, link, doc, nil, nil)
+	if err != nil {
+		return err
+	}
 
 	return nil
 }
@@ -169,6 +176,7 @@ func makeSignedPayload(verb, link, date, key string) (string, error) {
 	}
 
 	s := stringToSign(pl)
+	fmt.Printf("payload to sign: %s\n", s)
 
 	return authorize(s, key)
 }

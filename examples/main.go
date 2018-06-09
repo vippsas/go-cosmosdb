@@ -25,6 +25,11 @@ func fromEnv() config {
 	return cfg
 }
 
+type ExampleDoc struct {
+	id    string
+	value string
+}
+
 func main() {
 	fmt.Printf("Starting with examples...\n")
 
@@ -44,6 +49,15 @@ func main() {
 	}
 
 	fmt.Println(db)
+
+	// Create a document
+	link := cosmosdb.CreateCollLink(cfg.DbName, "invoices")
+	doc := ExampleDoc{id: "aaa", value: "666"}
+	err = client.CreateDocument(context.Background(), link, doc, nil)
+	if err != nil {
+		err = errors.WithStack(err)
+		fmt.Println(err)
+	}
 
 	return
 }
