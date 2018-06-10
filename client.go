@@ -64,6 +64,10 @@ func CreateDocsLink(dbName, collName string) string {
 	return "dbs/" + dbName + "/colls/" + collName + "/docs"
 }
 
+func CreateDocLink(dbName, coll, doc string) string {
+	return "dbs/" + dbName + "/colls/" + coll + "/docs/" + doc
+}
+
 func New(url string, cfg Config, cl *http.Client) *Client {
 	client := &Client{
 		Url:    strings.Trim(url, "/"),
@@ -98,13 +102,8 @@ func (c *Client) GetDatabase(ctx context.Context, link string, ops *RequestOptio
 	return db, nil
 }
 
-func (c *Client) GetDocument(ctx context.Context, link string, ops *RequestOptions, out *interface{}) error {
-	return ErrorNotImplemented
-}
-
-func (c *Client) CreateDocument(ctx context.Context, link string,
-	doc interface{}, ops *RequestOptions) error {
-	fmt.Printf("CreateDocument: %s\n", link)
+func (c *Client) GetDocument(ctx context.Context, link string,
+	ops *RequestOptions, out interface{}) error {
 
 	// add optional headers
 	headers := map[string]string{}
@@ -115,7 +114,25 @@ func (c *Client) CreateDocument(ctx context.Context, link string,
 		}
 	}
 
-	fmt.Printf("CreateDocument: Headers: %s\n", headers)
+	err := c.get(ctx, link, out, headers)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (c *Client) CreateDocument(ctx context.Context, link string,
+	doc interface{}, ops *RequestOptions) error {
+
+	// add optional headers
+	headers := map[string]string{}
+
+	if ops != nil {
+		for k, v := range *ops {
+			headers[string(k)] = v
+		}
+	}
 
 	err := c.create(ctx, link, doc, nil, headers)
 	if err != nil {

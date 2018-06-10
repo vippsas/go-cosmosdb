@@ -31,6 +31,12 @@ type ExampleDoc struct {
 	RecipientPartitionKey string
 }
 
+type ExampleGetDoc struct {
+	cosmosdb.Document
+	Id                    string `json:"id"`
+	RecipientPartitionKey string
+}
+
 func main() {
 	fmt.Printf("Starting with examples...\n")
 
@@ -71,6 +77,20 @@ func main() {
 		err = errors.WithStack(err)
 		fmt.Println(err)
 	}
+
+	// Get a document with partitionkey
+	link = cosmosdb.CreateDocLink(cfg.DbName, "invoices", "aaa")
+	doc = ExampleDoc{Id: "aaa"}
+	ro = cosmosdb.RequestOptions{
+		cosmosdb.ReqOpPartitionKey: "[\"asdf\"]",
+	}
+	err = client.GetDocument(context.Background(), link, &ro, &doc)
+	if err != nil {
+		err = errors.WithStack(err)
+		fmt.Println(err)
+	}
+
+	fmt.Printf("Received document: %+v\n", doc)
 
 	return
 }
