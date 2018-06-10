@@ -26,8 +26,9 @@ func fromEnv() config {
 }
 
 type ExampleDoc struct {
-	Id    string `json:"id"`
-	Value string
+	Id                    string `json:"id"`
+	Value                 string
+	RecipientPartitionKey string
 }
 
 func main() {
@@ -50,13 +51,22 @@ func main() {
 
 	fmt.Println(db)
 
-	// Create a document with partition key
+	// Create a document without partition key
 	link := cosmosdb.CreateDocsLink(cfg.DbName, "batchstatuses")
-	doc := ExampleDoc{Id: "aaa", Value: "666"}
-	//ro := cosmosdb.RequestOptions{
-	//cosmosdb.ReqOpPartitionKey: "[aaa]",
-	//}
+	doc := ExampleDoc{Id: "aaa", Value: "666", RecipientPartitionKey: "asdf"}
 	err = client.CreateDocument(context.Background(), link, doc, nil)
+	if err != nil {
+		err = errors.WithStack(err)
+		fmt.Println(err)
+	}
+
+	// Create a document with partition key
+	link = cosmosdb.CreateDocsLink(cfg.DbName, "invoices")
+	doc = ExampleDoc{Id: "aaa", Value: "666", RecipientPartitionKey: "asdf"}
+	ro := cosmosdb.RequestOptions{
+		cosmosdb.ReqOpPartitionKey: "[\"asdf\"]",
+	}
+	err = client.CreateDocument(context.Background(), link, doc, &ro)
 	if err != nil {
 		err = errors.WithStack(err)
 		fmt.Println(err)

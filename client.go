@@ -115,7 +115,9 @@ func (c *Client) CreateDocument(ctx context.Context, link string,
 		}
 	}
 
-	err := c.create(ctx, link, doc, nil, nil)
+	fmt.Printf("CreateDocument: Headers: %s\n", headers)
+
+	err := c.create(ctx, link, doc, nil, headers)
 	if err != nil {
 		return err
 	}
@@ -196,8 +198,8 @@ func makeAuthHeader(sPayload string) string {
 func defaultHeaders(method, link, key string) (map[string]string, error) {
 	h := map[string]string{}
 	h[HEADER_XDATE] = time.Now().UTC().Format("Mon, 02 Jan 2006 15:04:05 GMT")
-	h[HEADER_VER] = "2016-07-11"
-	h[HEADER_CROSSPARTITION] = "true"
+	h[HEADER_VER] = "2017-02-22"
+	//h[HEADER_CROSSPARTITION] = "true"
 
 	sign, err := makeSignedPayload(method, link, h[HEADER_XDATE], key)
 	if err != nil {
@@ -239,6 +241,8 @@ func (c *Client) method(ctx context.Context, method, link string, ret interface{
 	for k, v := range headers {
 		req.Header.Add(k, v)
 	}
+
+	fmt.Printf("Headers: %s\n", req.Header)
 
 	return c.do(ctx, req, ret)
 }
