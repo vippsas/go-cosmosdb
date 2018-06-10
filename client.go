@@ -128,6 +128,7 @@ type RequestOption string
 
 var (
 	ReqOpAllowCrossPartition = RequestOption("x-ms-documentdb-query-enablecrosspartition")
+	ReqOpPartitionKey        = RequestOption(HEADER_PARTITIONKEY)
 )
 
 func (c *Client) get(ctx context.Context, link string, ret interface{}, headers map[string]string) error {
@@ -142,6 +143,7 @@ func (c *Client) create(ctx context.Context, link string, body, ret interface{},
 		return err
 	}
 	buf := bytes.NewBuffer(data)
+	fmt.Printf("Request body: \n%s\n", data)
 
 	fmt.Printf("Will call c.method\n")
 	_, err = c.method(ctx, "POST", link, ret, buf, headers)
@@ -168,10 +170,12 @@ func makeSignedPayload(verb, link, date, key string) (string, error) {
 		link = link[1:]
 	}
 
+	rLink, rType := resourceTypeFromLink(verb, link)
+
 	pl := AuthorizationPayload{
 		Verb:         verb,
-		ResourceType: resourceTypeFromLink(link),
-		ResourceLink: link,
+		ResourceType: rType,
+		ResourceLink: rLink,
 		Date:         date,
 	}
 
@@ -366,7 +370,7 @@ func stringify(body interface{}) (bt []byte, err error) {
 	return
 }
 
-func resourceTypeFromLink(link string) string {
+func resourceTypeFromLink(verb, link string) (rLink, rType string) {
 	if strings.HasPrefix(link, "/") == false {
 		link = "/" + link
 	}
@@ -377,11 +381,36 @@ func resourceTypeFromLink(link string) string {
 	parts := strings.Split(link, "/")
 	l := len(parts)
 
-	if l%2 == 0 {
-		return parts[l-3]
-	} else {
-		return parts[l-2]
+	switch verb {
+	case "GET":
+		if l%2 == 0 {
+			rLink = strings.Join(parts[1:l-1], "/")
+			rType = parts[l-3]
+		} else {
+			rLink = strings.Join(parts[1:l-1], "/")
+			rType = parts[l-2]
+		}
+	case "POST":
+		if l%2 == 0 {
+			rLink = strings.Join(parts[1:l-2], "/")
+			rType = parts[l-3]
+		} else {
+			rLink = strings.Join(parts[1:l-2], "/")
+			rType = parts[l-2]
+		}
+
+	default:
+		if l%2 == 0 {
+			rLink = strings.Join(parts[0:l-2], "/")
+			rType = parts[l-3]
+		} else {
+			//rLink = strings.Join(parts[0:l-2], "/")
+			rLink = link
+			rType = parts[l-2]
+		}
 	}
+
+	return
 }
 
 // Get path and return resource Id and Type

@@ -39,22 +39,26 @@ func TestMakeAuthHeader(t *testing.T) {
 
 func TestResourceTypeFromLink(t *testing.T) {
 	cases := []struct {
-		in       string
-		expected string
+		verb  string
+		in    string
+		rLink string
+		rType string
 	}{
-		{"/dbs", "dbs"},
-		{"dbs", "dbs"},
-		{"/dbs/myDb/", "dbs"},
-		{"/dbs/myDb", "dbs"},
-		{"/dbs/myDb/colls", "colls"},
-		{"/dbs/myDb/colls/", "colls"},
-		{"/dbs/myDb/colls/someDoc", "colls"},
-		{"/dbs/myDb/colls/someDoc/", "colls"},
+		{"GET", "/dbs", "dbs", "dbs"},
+		{"GET", "dbs", "dbs", "dbs"},
+		{"GET", "/dbs/myDb", "dbs/myDb", "dbs"},
+		{"GET", "/dbs/myDb/", "dbs/myDb", "dbs"},
+		{"GET", "/dbs/myDb/colls", "dbs/myDb/colls", "colls"},
+		{"GET", "/dbs/myDb/colls/", "dbs/myDb/colls", "colls"},
+		{"GET", "/dbs/myDb/colls/someCol", "dbs/myDb/colls/someCol", "colls"},
+		{"GET", "/dbs/myDb/colls/someCol/", "dbs/myDb/colls/someCol", "colls"},
+		{"POST", "/dbs/myDb/colls/myColl/docs/", "dbs/myDb/colls/myColl", "docs"},
 	}
 	for _, c := range cases {
-		t.Run("case: "+c.in, func(t *testing.T) {
-			result := resourceTypeFromLink(c.in)
-			assert.Equal(t, c.expected, result)
+		t.Run("case: "+c.verb+": "+c.in, func(t *testing.T) {
+			rLink, rType := resourceTypeFromLink(c.verb, c.in)
+			assert.Equal(t, c.rType, rType)
+			assert.Equal(t, c.rLink, rLink)
 		})
 	}
 }
