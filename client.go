@@ -11,22 +11,6 @@ import (
 	"time"
 )
 
-const (
-	HEADER_XDATE        = "X-Ms-Date"
-	HEADER_AUTH         = "Authorization"
-	HEADER_VER          = "X-Ms-Version"
-	HEADER_CONTYPE      = "Content-Type"
-	HEADER_CONLEN       = "Content-Length"
-	HEADER_IS_QUERY     = "X-Ms-Documentdb-Isquery"
-	HEADER_UPSERT       = "X-Ms-Documentdb-Is-Upsert"
-	HEADER_CONTINUATION = "X-Ms-Continuation"
-	HEADER_IF_MATCH     = "If-Match"
-	HEADER_CHARGE       = "X-Ms-Request-Charge"
-
-	HEADER_CROSSPARTITION = "x-ms-documentdb-query-enablecrosspartition"
-	HEADER_PARTITIONKEY   = "x-ms-documentdb-partitionkey"
-)
-
 var (
 	IgnoreContext bool
 	ResponseHook  func(ctx context.Context, method string, headers map[string][]string)
@@ -58,14 +42,6 @@ func New(url string, cfg Config, cl *http.Client) *Client {
 
 	return client
 }
-
-type RequestOptions map[RequestOption]string
-type RequestOption string
-
-var (
-	ReqOpAllowCrossPartition = RequestOption("x-ms-documentdb-query-enablecrosspartition")
-	ReqOpPartitionKey        = RequestOption(HEADER_PARTITIONKEY)
-)
 
 func (c *Client) get(ctx context.Context, link string, ret interface{}, headers map[string]string) error {
 	_, err := c.method(ctx, "GET", link, ret, nil, headers)
