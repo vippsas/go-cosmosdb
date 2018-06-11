@@ -79,6 +79,7 @@ func main() {
 	}
 
 	// Get a document with partitionkey
+	fmt.Printf("\nGet document with partition key.\n")
 	link = cosmosdb.CreateDocLink(cfg.DbName, "invoices", "aaa")
 	doc = ExampleDoc{Id: "aaa"}
 	ro = cosmosdb.RequestOptions{
@@ -91,6 +92,15 @@ func main() {
 	}
 
 	fmt.Printf("Received document: %+v\n", doc)
+
+	// Delete a document with partition key
+	fmt.Printf("\nDelete document with partition key.\n")
+	link = cosmosdb.CreateDocLink(cfg.DbName, "invoices", "aaa")
+	err = client.DeleteDocument(context.Background(), link, &ro)
+	if err != nil {
+		err = errors.WithStack(err)
+		fmt.Println(err)
+	}
 
 	return
 }

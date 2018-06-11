@@ -51,5 +51,19 @@ func (c *Client) GetDocument(ctx context.Context, link string,
 }
 
 func (c *Client) DeleteDocument(ctx context.Context, link string, ops *RequestOptions) error {
-	return ErrorNotImplemented
+	// add optional headers
+	headers := map[string]string{}
+
+	if ops != nil {
+		for k, v := range *ops {
+			headers[string(k)] = v
+		}
+	}
+
+	err := c.delete(ctx, link, headers)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }

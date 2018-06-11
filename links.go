@@ -20,6 +20,8 @@ func CreateDocLink(dbName, coll, doc string) string {
 	return "dbs/" + dbName + "/colls/" + coll + "/docs/" + doc
 }
 
+// resourceTypeFromLink is used to extract the resource type link to use in the
+// payload of the authorization header.
 func resourceTypeFromLink(verb, link string) (rLink, rType string) {
 	if strings.HasPrefix(link, "/") == false {
 		link = "/" + link
@@ -33,7 +35,7 @@ func resourceTypeFromLink(verb, link string) (rLink, rType string) {
 
 	// TODO: extend with missing http verbs.
 	switch verb {
-	case "GET":
+	case "GET", "DELETE":
 		if l%2 == 0 {
 			rLink = strings.Join(parts[1:l-1], "/")
 			rType = parts[l-3]

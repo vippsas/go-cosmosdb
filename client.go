@@ -78,7 +78,6 @@ func (c *Client) get(ctx context.Context, link string, ret interface{}, headers 
 	return err
 }
 
-// Create resource
 func (c *Client) create(ctx context.Context, link string, body, ret interface{}, headers map[string]string) error {
 	data, err := stringify(body)
 	if err != nil {
@@ -89,6 +88,11 @@ func (c *Client) create(ctx context.Context, link string, body, ret interface{},
 
 	fmt.Printf("Will call c.method\n")
 	_, err = c.method(ctx, "POST", link, ret, buf, headers)
+	return err
+}
+
+func (c *Client) delete(ctx context.Context, link string, headers map[string]string) error {
+	_, err := c.method(ctx, "DELETE", link, nil, nil, headers)
 	return err
 }
 
