@@ -49,3 +49,7 @@ func (c *Client) GetDocument(ctx context.Context, link string,
 
 	return nil
 }
+
+func (c *Client) DeleteDocument(ctx context.Context, link string, ops *RequestOptions) error {
+	return ErrorNotImplemented
+}

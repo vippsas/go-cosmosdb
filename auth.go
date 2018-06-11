@@ -50,6 +50,7 @@ func stringToSign(p AuthorizationPayload) string {
 		"" + "\n"
 }
 
+// authHeader consructs the authentication header expected by the comsosdb API.
 func authHeader(sPayload string) string {
 	masterToken := "master"
 	tokenVersion := "1.0"

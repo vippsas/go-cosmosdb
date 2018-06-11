@@ -31,6 +31,7 @@ func resourceTypeFromLink(verb, link string) (rLink, rType string) {
 	parts := strings.Split(link, "/")
 	l := len(parts)
 
+	// TODO: extend with missing http verbs.
 	switch verb {
 	case "GET":
 		if l%2 == 0 {

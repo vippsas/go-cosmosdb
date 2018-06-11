@@ -1,20 +1,5 @@
 package cosmosdb
 
-type IndexingMode string
-
-const (
-	Consistent = IndexingMode("Consistent")
-	Lazy       = IndexingMode("Lazy")
-)
-
-// Indexing policy
-type IndexingPolicy struct {
-	IndexingMode IndexingMode   `json:"indexingMode,omitempty"`
-	Automatic    bool           `json:"automatic"`
-	Included     []IncludedPath `json:"includedPaths,omitempty"`
-	Excluded     []ExcludedPath `json:"excludedPaths,omitempty"`
-}
-
 type DataType string
 
 const (
@@ -48,11 +33,6 @@ type IncludedPath struct {
 
 type ExcludedPath struct {
 	Path string `json:"path"`
-}
-
-type PartitionKey struct {
-	Paths []string `json:"paths"`
-	Kind  string   `json:"kind"`
 }
 
 // Stored Procedure

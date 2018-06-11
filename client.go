@@ -31,8 +31,6 @@ const (
 	HEADER_PARTITIONKEY   = "x-ms-documentdb-partitionkey"
 )
 
-// Client represents a connection to cosmosdb. Not in the sense of a database
-// connection but in the sense of containing all required information to get
 var (
 	errRetry              = errors.New("retry")
 	IgnoreContext         bool
@@ -51,6 +49,8 @@ type Client struct {
 	Client *http.Client
 }
 
+// New makes a new client to communicate to a cosmosdb instance.
+// If no http.Client is provided it defaults to the http.DefaultClient
 func New(url string, cfg Config, cl *http.Client) *Client {
 	client := &Client{
 		Url:    strings.Trim(url, "/"),
@@ -95,7 +95,7 @@ func (c *Client) create(ctx context.Context, link string, body, ret interface{},
 func defaultHeaders(method, link, key string) (map[string]string, error) {
 	h := map[string]string{}
 	h[HEADER_XDATE] = time.Now().UTC().Format("Mon, 02 Jan 2006 15:04:05 GMT")
-	h[HEADER_VER] = "2017-02-22"
+	h[HEADER_VER] = "2017-02-22" // TODO: move to package level
 	//h[HEADER_CROSSPARTITION] = "true"
 
 	sign, err := signedPayload(method, link, h[HEADER_XDATE], key)
@@ -110,7 +110,6 @@ func defaultHeaders(method, link, key string) (map[string]string, error) {
 	return h, nil
 }
 
-// Private generic method resource
 func (c *Client) method(ctx context.Context, method, link string, ret interface{}, body io.Reader, headers map[string]string) (*http.Response, error) {
 	req, err := http.NewRequest(method, path(c.Url, link), body)
 	if err != nil {
