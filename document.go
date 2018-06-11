@@ -30,6 +30,14 @@ func (c *Client) CreateDocument(ctx context.Context, link string,
 	return nil
 }
 
+// ListDocument reads either all documents or the incremental feed, aka.
+// change feed.
+// TODO: probably have to return continuation token for the feed
+func (c *Client) ListDocument(ctx context.Context, link string,
+	ops *RequestOptions, out interface{}) error {
+	return ErrorNotImplemented
+}
+
 func (c *Client) GetDocument(ctx context.Context, link string,
 	ops *RequestOptions, out interface{}) error {
 
@@ -50,6 +58,12 @@ func (c *Client) GetDocument(ctx context.Context, link string,
 	return nil
 }
 
+// ReplaceDocument replaces a whole document.
+func (c *Client) ReplaceDocument(ctx context.Context, link string,
+	doc interface{}, ops *RequestOptions, out interface{}) error {
+	return ErrorNotImplemented
+}
+
 func (c *Client) DeleteDocument(ctx context.Context, link string, ops *RequestOptions) error {
 	// add optional headers
 	headers := map[string]string{}
@@ -66,4 +80,8 @@ func (c *Client) DeleteDocument(ctx context.Context, link string, ops *RequestOp
 	}
 
 	return nil
+}
+
+func (c *Client) QueryDocuments(ctx context.Context, link string, qry Query, ops *RequestOptions) error {
+	return ErrorNotImplemented
 }

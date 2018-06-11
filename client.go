@@ -12,10 +12,14 @@ import (
 )
 
 var (
+	// TODO: useful?
 	IgnoreContext bool
-	ResponseHook  func(ctx context.Context, method string, headers map[string][]string)
+	// TODO: check thread safety
+	ResponseHook func(ctx context.Context, method string, headers map[string][]string)
 )
 
+// Config is required as input parameter for the constructor creating a new
+// cosmosdb client.
 type Config struct {
 	MasterKey  string
 	MaxRetries int
