@@ -30,6 +30,11 @@ func (c *Client) CreateDocument(ctx context.Context, link string,
 	return nil
 }
 
+func (c *Client) UpsertDocument(ctx context.Context, link string,
+	doc interface{}, ops *RequestOptions) error {
+	return ErrorNotImplemented
+}
+
 // ListDocument reads either all documents or the incremental feed, aka.
 // change feed.
 // TODO: probably have to return continuation token for the feed
