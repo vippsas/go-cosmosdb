@@ -60,11 +60,12 @@ func main() {
 	// Create a document without partition key
 	link := cosmosdb.CreateDocsLink(cfg.DbName, "batchstatuses")
 	doc := ExampleDoc{Id: "aaa", Value: "666", RecipientPartitionKey: "asdf"}
-	err = client.CreateDocument(context.Background(), link, doc, nil)
+	resource, err := client.CreateDocument(context.Background(), link, doc, nil)
 	if err != nil {
 		err = errors.WithStack(err)
 		fmt.Println(err)
 	}
+	fmt.Println(resource)
 
 	// Create a document with partition key
 	link = cosmosdb.CreateDocsLink(cfg.DbName, "invoices")
@@ -72,11 +73,12 @@ func main() {
 	ro := cosmosdb.RequestOptions{
 		cosmosdb.ReqOpPartitionKey: "[\"asdf\"]",
 	}
-	err = client.CreateDocument(context.Background(), link, doc, &ro)
+	resource, err = client.CreateDocument(context.Background(), link, doc, &ro)
 	if err != nil {
 		err = errors.WithStack(err)
 		fmt.Println(err)
 	}
+	fmt.Println(resource)
 
 	// Get a document with partitionkey
 	fmt.Printf("\nGet document with partition key.\n")

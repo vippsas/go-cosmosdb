@@ -11,7 +11,7 @@ type Document struct {
 }
 
 func (c *Client) CreateDocument(ctx context.Context, link string,
-	doc interface{}, ops *RequestOptions) error {
+	doc interface{}, ops *RequestOptions) (*Resource, error) {
 
 	// add optional headers
 	headers := map[string]string{}
@@ -22,12 +22,14 @@ func (c *Client) CreateDocument(ctx context.Context, link string,
 		}
 	}
 
-	err := c.create(ctx, link, doc, nil, headers)
+	resource := &Resource{}
+
+	err := c.create(ctx, link, doc, resource, headers)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	return nil
+	return resource, nil
 }
 
 func (c *Client) UpsertDocument(ctx context.Context, link string,
