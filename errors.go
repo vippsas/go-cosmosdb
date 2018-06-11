@@ -4,4 +4,9 @@ import (
 	"github.com/pkg/errors"
 )
 
-var ErrorNotImplemented = errors.New("not implemented")
+var (
+	errRetry = errors.New("retry")
+
+	ErrPreconditionFailed = errors.New("precondition failed")
+	ErrorNotImplemented   = errors.New("not implemented")
+)
