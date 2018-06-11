@@ -48,8 +48,7 @@ func main() {
 	client := cosmosdb.New(cfg.DbUrl, cosmosCfg, nil)
 
 	// Get a database
-	dbLink := cosmosdb.CreateDatabaseLink(cfg.DbName)
-	db, err := client.GetDatabase(context.Background(), dbLink, nil)
+	db, err := client.GetDatabase(context.Background(), cfg.DbName, nil)
 	if err != nil {
 		err = errors.WithStack(err)
 		fmt.Println(err)

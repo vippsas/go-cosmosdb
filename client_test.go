@@ -23,8 +23,6 @@ func TestOne(t *testing.T) {
 	}
 	c := New(ts.URL, cfg, nil)
 
-	link := CreateDatabaseLink("ToDoList")
-
-	_, err := c.GetDatabase(context.Background(), link, nil)
+	_, err := c.GetDatabase(context.Background(), "ToDoList", nil)
 	assert.NotNil(t, err)
 }
