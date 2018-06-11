@@ -16,18 +16,10 @@ type AuthorizationPayload struct {
 	Date         string
 }
 
-// stringToSign constructs the string to be signed from an `AuthorizationPayload`
-// struct. The generated string only works with the addressing by user ids, as
-// we use in this package. Addressing with self links requires different capitalization.
-func stringToSign(p AuthorizationPayload) string {
-	return strings.ToLower(p.Verb) + "\n" +
-		strings.ToLower(p.ResourceType) + "\n" +
-		p.ResourceLink + "\n" +
-		strings.ToLower(p.Date) + "\n" +
-		"" + "\n"
-}
-
-func makeSignedPayload(verb, link, date, key string) (string, error) {
+// makeSignedPayload makes a signed payload directly from the required input
+// variables. The returned string can then be used to make the authentication
+// header using `authHeader`.
+func signedPayload(verb, link, date, key string) (string, error) {
 	if strings.HasPrefix(link, "/") == true {
 		link = link[1:]
 	}
@@ -44,10 +36,21 @@ func makeSignedPayload(verb, link, date, key string) (string, error) {
 	s := stringToSign(pl)
 	fmt.Printf("payload to sign: %s\n", s)
 
-	return authorize(s, key)
+	return sign(s, key)
 }
 
-func makeAuthHeader(sPayload string) string {
+// stringToSign constructs the string to be signed from an `AuthorizationPayload`
+// struct. The generated string only works with the addressing by user ids, as
+// we use in this package. Addressing with self links requires different capitalization.
+func stringToSign(p AuthorizationPayload) string {
+	return strings.ToLower(p.Verb) + "\n" +
+		strings.ToLower(p.ResourceType) + "\n" +
+		p.ResourceLink + "\n" +
+		strings.ToLower(p.Date) + "\n" +
+		"" + "\n"
+}
+
+func authHeader(sPayload string) string {
 	masterToken := "master"
 	tokenVersion := "1.0"
 	return url.QueryEscape(
@@ -55,7 +58,7 @@ func makeAuthHeader(sPayload string) string {
 	)
 }
 
-func authorize(str, key string) (string, error) {
+func sign(str, key string) (string, error) {
 	var ret string
 	enc := base64.StdEncoding
 	salt, err := enc.DecodeString(key)

@@ -9,7 +9,6 @@ import (
 	"io/ioutil"
 	"math/rand"
 	"net/http"
-	"net/url"
 	"strings"
 	"time"
 
@@ -99,14 +98,13 @@ func defaultHeaders(method, link, key string) (map[string]string, error) {
 	h[HEADER_VER] = "2017-02-22"
 	//h[HEADER_CROSSPARTITION] = "true"
 
-	sign, err := makeSignedPayload(method, link, h[HEADER_XDATE], key)
+	sign, err := signedPayload(method, link, h[HEADER_XDATE], key)
 	if err != nil {
 		return h, err
 	}
 
-	masterToken := "master"
-	tokenVersion := "1.0"
-	h[HEADER_AUTH] = url.QueryEscape("type=" + masterToken + "&ver=" + tokenVersion + "&sig=" + sign)
+	h[HEADER_AUTH] = authHeader(sign)
+
 	fmt.Printf("Auth header: %s\n", h[HEADER_AUTH])
 
 	return h, nil
@@ -269,48 +267,5 @@ func stringify(body interface{}) (bt []byte, err error) {
 	default:
 		bt, err = json.Marshal(t)
 	}
-	return
-}
-
-func resourceTypeFromLink(verb, link string) (rLink, rType string) {
-	if strings.HasPrefix(link, "/") == false {
-		link = "/" + link
-	}
-	if strings.HasSuffix(link, "/") == false {
-		link = link + "/"
-	}
-
-	parts := strings.Split(link, "/")
-	l := len(parts)
-
-	switch verb {
-	case "GET":
-		if l%2 == 0 {
-			rLink = strings.Join(parts[1:l-1], "/")
-			rType = parts[l-3]
-		} else {
-			rLink = strings.Join(parts[1:l-1], "/")
-			rType = parts[l-2]
-		}
-	case "POST":
-		if l%2 == 0 {
-			rLink = strings.Join(parts[1:l-2], "/")
-			rType = parts[l-3]
-		} else {
-			rLink = strings.Join(parts[1:l-2], "/")
-			rType = parts[l-2]
-		}
-
-	default:
-		if l%2 == 0 {
-			rLink = strings.Join(parts[0:l-2], "/")
-			rType = parts[l-3]
-		} else {
-			//rLink = strings.Join(parts[0:l-2], "/")
-			rLink = link
-			rType = parts[l-2]
-		}
-	}
-
 	return
 }
