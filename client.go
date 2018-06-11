@@ -52,22 +52,6 @@ type Client struct {
 	Client *http.Client
 }
 
-func CreateDatabaseLink(dbName string) string {
-	return "dbs/" + dbName
-}
-
-func CreateCollLink(dbName, collName string) string {
-	return "dbs/" + dbName + "/colls/" + collName
-}
-
-func CreateDocsLink(dbName, collName string) string {
-	return "dbs/" + dbName + "/colls/" + collName + "/docs"
-}
-
-func CreateDocLink(dbName, coll, doc string) string {
-	return "dbs/" + dbName + "/colls/" + coll + "/docs/" + doc
-}
-
 func New(url string, cfg Config, cl *http.Client) *Client {
 	client := &Client{
 		Url:    strings.Trim(url, "/"),
@@ -80,66 +64,6 @@ func New(url string, cfg Config, cl *http.Client) *Client {
 	}
 
 	return client
-}
-
-func (c *Client) GetDatabase(ctx context.Context, link string, ops *RequestOptions) (*Database, error) {
-	// add optional headers
-	headers := map[string]string{}
-
-	if ops != nil {
-		for k, v := range *ops {
-			headers[string(k)] = v
-		}
-	}
-
-	db := &Database{}
-
-	err := c.get(ctx, link, db, nil)
-	if err != nil {
-		return nil, err
-	}
-
-	return db, nil
-}
-
-func (c *Client) GetDocument(ctx context.Context, link string,
-	ops *RequestOptions, out interface{}) error {
-
-	// add optional headers
-	headers := map[string]string{}
-
-	if ops != nil {
-		for k, v := range *ops {
-			headers[string(k)] = v
-		}
-	}
-
-	err := c.get(ctx, link, out, headers)
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func (c *Client) CreateDocument(ctx context.Context, link string,
-	doc interface{}, ops *RequestOptions) error {
-
-	// add optional headers
-	headers := map[string]string{}
-
-	if ops != nil {
-		for k, v := range *ops {
-			headers[string(k)] = v
-		}
-	}
-
-	err := c.create(ctx, link, doc, nil, headers)
-	if err != nil {
-		return err
-	}
-
-	return nil
 }
 
 type RequestOptions map[RequestOption]string
@@ -167,49 +91,6 @@ func (c *Client) create(ctx context.Context, link string, body, ret interface{},
 	fmt.Printf("Will call c.method\n")
 	_, err = c.method(ctx, "POST", link, ret, buf, headers)
 	return err
-}
-
-type AuthorizationPayload struct {
-	Verb         string
-	ResourceType string
-	ResourceLink string
-	Date         string
-}
-
-func stringToSign(p AuthorizationPayload) string {
-	return strings.ToLower(p.Verb) + "\n" +
-		strings.ToLower(p.ResourceType) + "\n" +
-		p.ResourceLink + "\n" +
-		strings.ToLower(p.Date) + "\n" +
-		"" + "\n"
-}
-
-func makeSignedPayload(verb, link, date, key string) (string, error) {
-	if strings.HasPrefix(link, "/") == true {
-		link = link[1:]
-	}
-
-	rLink, rType := resourceTypeFromLink(verb, link)
-
-	pl := AuthorizationPayload{
-		Verb:         verb,
-		ResourceType: rType,
-		ResourceLink: rLink,
-		Date:         date,
-	}
-
-	s := stringToSign(pl)
-	fmt.Printf("payload to sign: %s\n", s)
-
-	return authorize(s, key)
-}
-
-func makeAuthHeader(sPayload string) string {
-	masterToken := "master"
-	tokenVersion := "1.0"
-	return url.QueryEscape(
-		"type=" + masterToken + "&ver=" + tokenVersion + "&sig=" + sPayload,
-	)
 }
 
 func defaultHeaders(method, link, key string) (map[string]string, error) {
@@ -431,28 +312,5 @@ func resourceTypeFromLink(verb, link string) (rLink, rType string) {
 		}
 	}
 
-	return
-}
-
-// Get path and return resource Id and Type
-// (e.g: "/dbs/b5NCAA==/" ==> "b5NCAA==", "dbs")
-func parse(id string) (rId, rType string) {
-	if strings.HasPrefix(id, "/") == false {
-		id = "/" + id
-	}
-	if strings.HasSuffix(id, "/") == false {
-		id = id + "/"
-	}
-
-	parts := strings.Split(id, "/")
-	l := len(parts)
-
-	if l%2 == 0 {
-		rId = parts[l-2]
-		rType = parts[l-3]
-	} else {
-		rId = parts[l-3]
-		rType = parts[l-2]
-	}
 	return
 }
