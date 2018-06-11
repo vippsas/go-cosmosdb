@@ -11,6 +11,14 @@ type Database struct {
 	Users string `json:"_users,omitempty"`
 }
 
+func (c *Client) CreateDatabase(ctx context.Context, link, id string, ops *RequestOptions) (*Database, error) {
+	return nil, ErrorNotImplemented
+}
+
+func (c *Client) ListDatabases(ctx context.Context, link string, ops *RequestOptions) ([]Database, error) {
+	return nil, ErrorNotImplemented
+}
+
 func (c *Client) GetDatabase(ctx context.Context, link string, ops *RequestOptions) (*Database, error) {
 	// add optional headers
 	headers := map[string]string{}
@@ -29,4 +37,8 @@ func (c *Client) GetDatabase(ctx context.Context, link string, ops *RequestOptio
 	}
 
 	return db, nil
+}
+
+func (c *Client) DeleteDatabase(ctx context.Context, link string, ops *RequestOptions) error {
+	return ErrorNotImplemented
 }
