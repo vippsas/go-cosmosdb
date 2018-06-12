@@ -10,7 +10,7 @@ type Document struct {
 	Attachments string `json:"attachments,omitempty"`
 }
 
-func (c *Client) CreateDocument(ctx context.Context, link string,
+func (c *Client) CreateDocument(ctx context.Context, dbName, colName string,
 	doc interface{}, ops *RequestOptions) (*Resource, error) {
 
 	// add optional headers
@@ -23,6 +23,7 @@ func (c *Client) CreateDocument(ctx context.Context, link string,
 	}
 
 	resource := &Resource{}
+	link := CreateDocsLink(dbName, colName)
 
 	err := c.create(ctx, link, doc, resource, headers)
 	if err != nil {
@@ -45,7 +46,7 @@ func (c *Client) ListDocument(ctx context.Context, link string,
 	return ErrorNotImplemented
 }
 
-func (c *Client) GetDocument(ctx context.Context, link string,
+func (c *Client) GetDocument(ctx context.Context, dbName, colName, id string,
 	ops *RequestOptions, out interface{}) error {
 
 	// add optional headers
@@ -56,6 +57,8 @@ func (c *Client) GetDocument(ctx context.Context, link string,
 			headers[string(k)] = v
 		}
 	}
+
+	link := CreateDocLink(dbName, colName, id)
 
 	err := c.get(ctx, link, out, headers)
 	if err != nil {
@@ -71,7 +74,7 @@ func (c *Client) ReplaceDocument(ctx context.Context, link string,
 	return ErrorNotImplemented
 }
 
-func (c *Client) DeleteDocument(ctx context.Context, link string, ops *RequestOptions) error {
+func (c *Client) DeleteDocument(ctx context.Context, dbName, colName, id string, ops *RequestOptions) error {
 	// add optional headers
 	headers := map[string]string{}
 
@@ -80,6 +83,8 @@ func (c *Client) DeleteDocument(ctx context.Context, link string, ops *RequestOp
 			headers[string(k)] = v
 		}
 	}
+
+	link := CreateDocLink(dbName, colName, id)
 
 	err := c.delete(ctx, link, headers)
 	if err != nil {

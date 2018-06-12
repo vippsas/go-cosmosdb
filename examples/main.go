@@ -57,9 +57,8 @@ func main() {
 	fmt.Println(db)
 
 	// Create a document without partition key
-	link := cosmosdb.CreateDocsLink(cfg.DbName, "batchstatuses")
 	doc := ExampleDoc{Id: "aaa", Value: "666", RecipientPartitionKey: "asdf"}
-	resource, err := client.CreateDocument(context.Background(), link, doc, nil)
+	resource, err := client.CreateDocument(context.Background(), cfg.DbName, "batchstatuses", doc, nil)
 	if err != nil {
 		err = errors.WithStack(err)
 		fmt.Println(err)
@@ -67,12 +66,12 @@ func main() {
 	fmt.Println(resource)
 
 	// Create a document with partition key
-	link = cosmosdb.CreateDocsLink(cfg.DbName, "invoices")
+	fmt.Printf("\n CreateDocument with partition key.\n")
 	doc = ExampleDoc{Id: "aaa", Value: "666", RecipientPartitionKey: "asdf"}
 	ro := cosmosdb.RequestOptions{
 		cosmosdb.ReqOpPartitionKey: "[\"asdf\"]",
 	}
-	resource, err = client.CreateDocument(context.Background(), link, doc, &ro)
+	resource, err = client.CreateDocument(context.Background(), cfg.DbName, "invoices", doc, &ro)
 	if err != nil {
 		err = errors.WithStack(err)
 		fmt.Println(err)
@@ -81,12 +80,11 @@ func main() {
 
 	// Get a document with partitionkey
 	fmt.Printf("\nGet document with partition key.\n")
-	link = cosmosdb.CreateDocLink(cfg.DbName, "invoices", "aaa")
 	doc = ExampleDoc{Id: "aaa"}
 	ro = cosmosdb.RequestOptions{
 		cosmosdb.ReqOpPartitionKey: "[\"asdf\"]",
 	}
-	err = client.GetDocument(context.Background(), link, &ro, &doc)
+	err = client.GetDocument(context.Background(), cfg.DbName, "invoices", "aaa", &ro, &doc)
 	if err != nil {
 		err = errors.WithStack(err)
 		fmt.Println(err)
@@ -96,8 +94,7 @@ func main() {
 
 	// Delete a document with partition key
 	fmt.Printf("\nDelete document with partition key.\n")
-	link = cosmosdb.CreateDocLink(cfg.DbName, "invoices", "aaa")
-	err = client.DeleteDocument(context.Background(), link, &ro)
+	err = client.DeleteDocument(context.Background(), cfg.DbName, "invoices", "aaa", &ro)
 	if err != nil {
 		err = errors.WithStack(err)
 		fmt.Println(err)

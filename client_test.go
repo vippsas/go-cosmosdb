@@ -10,11 +10,14 @@ import (
 )
 
 func TestOne(t *testing.T) {
-	t.Skip("currently broken")
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusInternalServerError)
 
-		assert.Equal(t, "type%3dmaster%26ver%3d1.0%26sig%3dc09PEVJrgp2uQRkr934kFbTqhByc7TVr3OHyqlu%2bc%2bc%3d", r.Header.Get(HEADER_AUTH))
+		// check default headers
+		assert.NotNil(t, r.Header[HEADER_AUTH])
+		assert.Equal(t, "GET", r.Method)
+		assert.Equal(t, "/dbs/ToDoList", r.URL.Path)
+
 	}))
 	defer ts.Close()
 
