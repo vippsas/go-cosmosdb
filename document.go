@@ -10,6 +10,13 @@ type Document struct {
 	Attachments string `json:"attachments,omitempty"`
 }
 
+type CreateDocumentOptions struct {
+	PartitionKeyValue string
+
+	IsUpsert          bool
+	IndexingDirective string
+}
+
 func (c *Client) CreateDocument(ctx context.Context, dbName, colName string,
 	doc interface{}, ops *RequestOptions) (*Resource, error) {
 
