@@ -2,6 +2,7 @@ package cosmosdb
 
 import (
 	"context"
+	"fmt"
 	"strconv"
 )
 
@@ -28,7 +29,7 @@ func (ops CreateDocumentOptions) AsHeaders() (map[string]string, error) {
 	headers := map[string]string{}
 
 	if ops.PartitionKeyValue != nil {
-		headers[HEADER_PARTITIONKEY] = *ops.PartitionKeyValue
+		headers[HEADER_PARTITIONKEY] = fmt.Sprintf("[\"%s\"]", *ops.PartitionKeyValue)
 	}
 
 	if ops.IsUpsert != nil {
