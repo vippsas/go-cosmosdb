@@ -69,16 +69,25 @@ func main() {
 	// Create a document with partition key
 	fmt.Printf("\n CreateDocument with partition key.\n")
 	doc = ExampleDoc{Id: "aaa", Value: "666", RecipientPartitionKey: "asdf"}
-	pkval := "asdf"
 	ops = cosmosdb.CreateDocumentOptions{
-		PartitionKeyValue: &pkval,
+		PartitionKeyValue: "asdf",
+		IsUpsert:          true,
 	}
 	resource, err = client.CreateDocument(context.Background(), cfg.DbName, "invoices", doc, &ops)
 	if err != nil {
 		err = errors.WithStack(err)
 		fmt.Println(err)
 	}
-	fmt.Println(resource)
+	fmt.Printf("%+v\n", resource)
+
+	// Create a document with partition key
+	fmt.Printf("\n CreateDocument with partition key.\n")
+	resource, err = client.CreateDocument(context.Background(), cfg.DbName, "invoices", doc, &ops)
+	if err != nil {
+		err = errors.WithStack(err)
+		fmt.Println(err)
+	}
+	fmt.Printf("%+v\n", resource)
 
 	// Get a document with partitionkey
 	fmt.Printf("\nGet document with partition key.\n")
