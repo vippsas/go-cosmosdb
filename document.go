@@ -2,6 +2,7 @@ package cosmosdb
 
 import (
 	"context"
+	"strconv"
 )
 
 // Document
@@ -10,34 +11,72 @@ type Document struct {
 	Attachments string `json:"attachments,omitempty"`
 }
 
-type CreateDocumentOptions struct {
-	PartitionKeyValue string
+type IndexingDirective string
 
-	IsUpsert          bool
-	IndexingDirective string
+const (
+	IndexingDirectiveInclude = IndexingDirective("include")
+	IndexingDirectiveExclude = IndexingDirective("exclude")
+)
+
+type CreateDocumentOptions struct {
+	PartitionKeyValue *string
+	IsUpsert          *bool
+	IndexingDirective *IndexingDirective
+}
+
+func (ops CreateDocumentOptions) AsHeaders() (map[string]string, error) {
+	headers := map[string]string{}
+
+	if ops.PartitionKeyValue != nil {
+		headers[HEADER_PARTITIONKEY] = *ops.PartitionKeyValue
+	}
+
+	if ops.IsUpsert != nil {
+		headers[HEADER_UPSERT] = strconv.FormatBool(*ops.IsUpsert)
+	}
+
+	if ops.IndexingDirective != nil {
+		headers[HEADER_INDEXINGDIRECTIVE] = string(*ops.IndexingDirective)
+	}
+
+	return headers, nil
 }
 
 func (c *Client) CreateDocument(ctx context.Context, dbName, colName string,
-	doc interface{}, ops *RequestOptions) (*Resource, error) {
+	doc interface{}, ops *CreateDocumentOptions) (*Resource, error) {
 
-	// add optional headers
+	// add optional headers (before)
+	//headers := map[string]string{}
+
+	//if ops != nil {
+	//for k, v := range *ops {
+	//headers[string(k)] = v
+	//}
+	//}
+
+	// add optional headers (after)
 	headers := map[string]string{}
-
+	var err error
 	if ops != nil {
-		for k, v := range *ops {
-			headers[string(k)] = v
+		headers, err = ops.AsHeaders()
+		if err != nil {
+			return nil, err
 		}
 	}
 
 	resource := &Resource{}
 	link := CreateDocsLink(dbName, colName)
 
-	err := c.create(ctx, link, doc, resource, headers)
+	err = c.create(ctx, link, doc, resource, headers)
 	if err != nil {
 		return nil, err
 	}
 
 	return resource, nil
+}
+
+type UpsertDocumentOptions struct {
+	/* TODO */
 }
 
 func (c *Client) UpsertDocument(ctx context.Context, link string,

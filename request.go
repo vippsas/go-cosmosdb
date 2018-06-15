@@ -20,8 +20,9 @@ const (
 	HEADER_IF_MATCH     = "If-Match"
 	HEADER_CHARGE       = "X-Ms-Request-Charge"
 
-	HEADER_CROSSPARTITION = "x-ms-documentdb-query-enablecrosspartition"
-	HEADER_PARTITIONKEY   = "x-ms-documentdb-partitionkey"
+	HEADER_CROSSPARTITION    = "x-ms-documentdb-query-enablecrosspartition"
+	HEADER_PARTITIONKEY      = "x-ms-documentdb-partitionkey"
+	HEADER_INDEXINGDIRECTIVE = "x-ms-indexing-directive"
 )
 
 type RequestOptions map[RequestOption]string
