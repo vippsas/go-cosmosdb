@@ -23,6 +23,10 @@ type CreateDocumentOptions struct {
 	PartitionKeyValue *string
 	IsUpsert          *bool
 	IndexingDirective *IndexingDirective
+
+	// Optional, not sure if this is a good idea
+	// could be useful to know if the collection requires a partition key or not.
+	Collection Collection
 }
 
 func (ops CreateDocumentOptions) AsHeaders() (map[string]string, error) {
