@@ -6,10 +6,17 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
+	"log"
 	"net/http"
 	"strings"
 	"time"
 )
+
+func init() {
+	// Using standard log lib to avoid external dependencies for now.
+	// TODO: Consider if debug is neccesary
+	log.SetOutput(ioutil.Discard)
+}
 
 var (
 	// TODO: useful?
@@ -71,15 +78,15 @@ func (c *Client) delete(ctx context.Context, link string, headers map[string]str
 func (c *Client) method(ctx context.Context, method, link string, ret interface{}, body io.Reader, headers map[string]string) (*http.Response, error) {
 	req, err := http.NewRequest(method, path(c.Url, link), body)
 	if err != nil {
-		fmt.Println(err)
+		log.Println(err)
 		return nil, err
 	}
-	fmt.Printf("Will call: %s\n", req.URL)
+	log.Printf("Will call: %s\n", req.URL)
 	//r := ResourceRequest(link, req)
 
 	defaultHeaders, err := defaultHeaders(method, link, c.Config.MasterKey)
 	if err != nil {
-		fmt.Println(err)
+		log.Println(err)
 		return nil, err
 	}
 
@@ -95,7 +102,7 @@ func (c *Client) method(ctx context.Context, method, link string, ret interface{
 		req.Header.Add(k, v)
 	}
 
-	fmt.Printf("Headers: %s\n", req.Header)
+	log.Printf("Headers: %s\n", req.Header)
 
 	return c.do(ctx, req, ret)
 }
@@ -162,7 +169,7 @@ func (c *Client) do(ctx context.Context, r *http.Request, data interface{}) (*ht
 	retryCount := 0
 	for {
 		r.Body = ioutil.NopCloser(bytes.NewReader(b))
-		fmt.Printf("Executing request\n")
+		log.Printf("Executing request\n")
 		resp, err := cli.Do(r)
 		if err != nil {
 			return nil, err

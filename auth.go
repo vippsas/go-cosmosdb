@@ -4,7 +4,7 @@ import (
 	"crypto/hmac"
 	"crypto/sha256"
 	"encoding/base64"
-	"fmt"
+	"log"
 	"net/url"
 	"strings"
 )
@@ -34,8 +34,7 @@ func signedPayload(verb, link, date, key string) (string, error) {
 	}
 
 	s := stringToSign(pl)
-	fmt.Printf("payload to sign: %s\n", s)
-
+	log.Printf("payload to sign: %s\n", s)
 	return sign(s, key)
 }
 
