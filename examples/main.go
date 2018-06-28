@@ -6,7 +6,7 @@ import (
 
 	"github.com/kelseyhightower/envconfig"
 	"github.com/pkg/errors"
-	"github.com/starsheriff/go-cosmosdb"
+	"github.com/vippsas/go-cosmosdb"
 )
 
 type config struct {
@@ -57,7 +57,8 @@ func main() {
 	fmt.Println(db)
 
 	// Create a document without partition key
-	doc := ExampleDoc{Id: "aaa", Value: "666", RecipientPartitionKey: "asdf"}
+	doc := ExampleDoc{Id: "aaa", Value: "666"}
+	ops := cosmosdb.CreateDocumentOptions{}
 	resource, err := client.CreateDocument(context.Background(), cfg.DbName, "batchstatuses", doc, nil)
 	if err != nil {
 		err = errors.WithStack(err)
@@ -68,20 +69,30 @@ func main() {
 	// Create a document with partition key
 	fmt.Printf("\n CreateDocument with partition key.\n")
 	doc = ExampleDoc{Id: "aaa", Value: "666", RecipientPartitionKey: "asdf"}
-	ro := cosmosdb.RequestOptions{
-		cosmosdb.ReqOpPartitionKey: "[\"asdf\"]",
+	ops = cosmosdb.CreateDocumentOptions{
+		PartitionKeyValue: "asdf",
+		IsUpsert:          true,
 	}
-	resource, err = client.CreateDocument(context.Background(), cfg.DbName, "invoices", doc, &ro)
+	resource, err = client.CreateDocument(context.Background(), cfg.DbName, "invoices", doc, &ops)
 	if err != nil {
 		err = errors.WithStack(err)
 		fmt.Println(err)
 	}
-	fmt.Println(resource)
+	fmt.Printf("%+v\n", resource)
+
+	// Create a document with partition key
+	fmt.Printf("\n CreateDocument with partition key.\n")
+	resource, err = client.CreateDocument(context.Background(), cfg.DbName, "invoices", doc, &ops)
+	if err != nil {
+		err = errors.WithStack(err)
+		fmt.Println(err)
+	}
+	fmt.Printf("%+v\n", resource)
 
 	// Get a document with partitionkey
 	fmt.Printf("\nGet document with partition key.\n")
 	doc = ExampleDoc{Id: "aaa"}
-	ro = cosmosdb.RequestOptions{
+	ro := cosmosdb.RequestOptions{
 		cosmosdb.ReqOpPartitionKey: "[\"asdf\"]",
 	}
 	err = client.GetDocument(context.Background(), cfg.DbName, "invoices", "aaa", &ro, &doc)
