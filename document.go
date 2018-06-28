@@ -44,15 +44,6 @@ func (ops CreateDocumentOptions) AsHeaders() (map[string]string, error) {
 func (c *Client) CreateDocument(ctx context.Context, dbName, colName string,
 	doc interface{}, ops *CreateDocumentOptions) (*Resource, error) {
 
-	// add optional headers (before)
-	//headers := map[string]string{}
-
-	//if ops != nil {
-	//for k, v := range *ops {
-	//headers[string(k)] = v
-	//}
-	//}
-
 	// add optional headers (after)
 	headers := map[string]string{}
 	var err error
