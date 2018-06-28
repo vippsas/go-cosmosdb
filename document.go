@@ -13,10 +13,16 @@ type Document struct {
 }
 
 type IndexingDirective string
+type ConsistencyLevel string
 
 const (
 	IndexingDirectiveInclude = IndexingDirective("include")
 	IndexingDirectiveExclude = IndexingDirective("exclude")
+
+	ConsistencyLevelStrong   = ConsistencyLevel("Strong")
+	ConsistencyLevelBounded  = ConsistencyLevel("Bounded")
+	ConsistencyLevelSession  = ConsistencyLevel("Session")
+	ConsistencyLevelEventual = ConsistencyLevel("Eventual")
 )
 
 type CreateDocumentOptions struct {
@@ -80,6 +86,33 @@ func (c *Client) UpsertDocument(ctx context.Context, link string,
 func (c *Client) ListDocument(ctx context.Context, link string,
 	ops *RequestOptions, out interface{}) error {
 	return ErrorNotImplemented
+}
+
+type GetDocumentOptions struct {
+	IfNoneMatch       bool
+	PartitionKeyValue string
+	ConsistencyLevel  ConsistencyLevel
+	SessionToken      string
+}
+
+func (ops GetDocumentOptions) AsHeaders() (map[string]string, error) {
+	headers := map[string]string{}
+
+	headers[HEADER_IF_NONE_MATCH] = strconv.FormatBool(ops.IfNoneMatch)
+
+	if ops.PartitionKeyValue != "" {
+		headers[HEADER_PARTITIONKEY] = fmt.Sprintf("[\"%s\"]", ops.PartitionKeyValue)
+	}
+
+	if ops.ConsistencyLevel != "" {
+		headers[HEADER_CONSISTENCY_LEVEL] = string(ops.ConsistencyLevel)
+	}
+
+	if ops.SessionToken != "" {
+		headers[HEADER_SESSION_TOKEN] = ops.SessionToken
+	}
+
+	return headers, nil
 }
 
 func (c *Client) GetDocument(ctx context.Context, dbName, colName, id string,
