@@ -9,16 +9,19 @@ import (
 )
 
 const (
-	HEADER_XDATE        = "X-Ms-Date"
-	HEADER_AUTH         = "Authorization"
-	HEADER_VER          = "X-Ms-Version"
-	HEADER_CONTYPE      = "Content-Type"
-	HEADER_CONLEN       = "Content-Length"
-	HEADER_IS_QUERY     = "X-Ms-Documentdb-Isquery"
-	HEADER_UPSERT       = "X-Ms-Documentdb-Is-Upsert"
-	HEADER_CONTINUATION = "X-Ms-Continuation"
-	HEADER_IF_MATCH     = "If-Match"
-	HEADER_CHARGE       = "X-Ms-Request-Charge"
+	HEADER_XDATE             = "X-Ms-Date"
+	HEADER_AUTH              = "Authorization"
+	HEADER_VER               = "X-Ms-Version"
+	HEADER_CONTYPE           = "Content-Type"
+	HEADER_CONLEN            = "Content-Length"
+	HEADER_IS_QUERY          = "X-Ms-Documentdb-Isquery"
+	HEADER_UPSERT            = "X-Ms-Documentdb-Is-Upsert"
+	HEADER_CONTINUATION      = "X-Ms-Continuation"
+	HEADER_IF_MATCH          = "If-Match"
+	HEADER_IF_NONE_MATCH     = "If-None-Match"
+	HEADER_CHARGE            = "X-Ms-Request-Charge"
+	HEADER_CONSISTENCY_LEVEL = "x-ms-consistency-level"
+	HEADER_SESSION_TOKEN     = "x-ms-session-token"
 
 	HEADER_CROSSPARTITION    = "x-ms-documentdb-query-enablecrosspartition"
 	HEADER_PARTITIONKEY      = "x-ms-documentdb-partitionkey"
@@ -26,6 +29,7 @@ const (
 )
 
 type RequestOptions map[RequestOption]string
+
 type RequestOption string
 
 var (
