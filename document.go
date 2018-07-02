@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"strconv"
+	"strings"
 )
 
 // Document
@@ -98,7 +99,7 @@ func (c *Client) GetDocument(ctx context.Context, dbName, colName, id string,
 		}
 	}
 
-	link := CreateDocLink(dbName, colName, id)
+	link := createDocLink(dbName, colName, id)
 
 	err := c.get(ctx, link, out, headers)
 	if err != nil {
@@ -123,24 +124,40 @@ func (c *Client) ReplaceDocument(ctx context.Context, link string,
 // DeleteDocumentOptions contains all options that can be used for deleting
 // documents.
 type DeleteDocumentOptions struct {
+	PartitionKeyValue   string
 	PreTriggersInclude  []string
 	PostTriggersInclude []string
 	/* TODO */
 }
 
-func (c *Client) DeleteDocument(ctx context.Context, dbName, colName, id string, ops *RequestOptions) error {
-	// add optional headers
+func (ops DeleteDocumentOptions) AsHeaders() (map[string]string, error) {
 	headers := map[string]string{}
 
-	if ops != nil {
-		for k, v := range *ops {
-			headers[string(k)] = v
-		}
+	//TODO: DRY
+	if ops.PartitionKeyValue != "" {
+		headers[HEADER_PARTITIONKEY] = fmt.Sprintf("[\"%s\"]", ops.PartitionKeyValue)
 	}
 
-	link := CreateDocLink(dbName, colName, id)
+	if ops.PreTriggersInclude != nil && len(ops.PreTriggersInclude) > 0 {
+		headers[HEADER_TRIGGER_PRE_INCLUDE] = strings.Join(ops.PreTriggersInclude, ",")
+	}
 
-	err := c.delete(ctx, link, headers)
+	if ops.PostTriggersInclude != nil && len(ops.PostTriggersInclude) > 0 {
+		headers[HEADER_TRIGGER_POST_INCLUDE] = strings.Join(ops.PostTriggersInclude, ",")
+	}
+
+	return headers, nil
+}
+
+func (c *Client) DeleteDocument(ctx context.Context, dbName, colName, id string, ops *DeleteDocumentOptions) error {
+	headers, err := ops.AsHeaders()
+	if err != nil {
+		return err
+	}
+
+	link := createDocLink(dbName, colName, id)
+
+	err = c.delete(ctx, link, headers)
 	if err != nil {
 		return err
 	}
