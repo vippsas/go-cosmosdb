@@ -20,9 +20,11 @@ const (
 )
 
 type CreateDocumentOptions struct {
-	PartitionKeyValue string
-	IsUpsert          bool
-	IndexingDirective IndexingDirective
+	PartitionKeyValue   string
+	IsUpsert            bool
+	IndexingDirective   IndexingDirective
+	PreTriggersInclude  []string
+	PostTriggersInclude []string
 }
 
 func (ops CreateDocumentOptions) AsHeaders() (map[string]string, error) {
@@ -66,6 +68,8 @@ func (c *Client) CreateDocument(ctx context.Context, dbName, colName string,
 }
 
 type UpsertDocumentOptions struct {
+	PreTriggersInclude  []string
+	PostTriggersInclude []string
 	/* TODO */
 }
 
@@ -104,10 +108,24 @@ func (c *Client) GetDocument(ctx context.Context, dbName, colName, id string,
 	return nil
 }
 
+type ReplaceDocumentOptions struct {
+	PreTriggersInclude  []string
+	PostTriggersInclude []string
+	/* TODO */
+}
+
 // ReplaceDocument replaces a whole document.
 func (c *Client) ReplaceDocument(ctx context.Context, link string,
 	doc interface{}, ops *RequestOptions, out interface{}) error {
 	return ErrorNotImplemented
+}
+
+// DeleteDocumentOptions contains all options that can be used for deleting
+// documents.
+type DeleteDocumentOptions struct {
+	PreTriggersInclude  []string
+	PostTriggersInclude []string
+	/* TODO */
 }
 
 func (c *Client) DeleteDocument(ctx context.Context, dbName, colName, id string, ops *RequestOptions) error {

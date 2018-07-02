@@ -20,9 +20,13 @@ const (
 	HEADER_IF_MATCH     = "If-Match"
 	HEADER_CHARGE       = "X-Ms-Request-Charge"
 
-	HEADER_CROSSPARTITION    = "x-ms-documentdb-query-enablecrosspartition"
-	HEADER_PARTITIONKEY      = "x-ms-documentdb-partitionkey"
-	HEADER_INDEXINGDIRECTIVE = "x-ms-indexing-directive"
+	HEADER_CROSSPARTITION       = "x-ms-documentdb-query-enablecrosspartition"
+	HEADER_PARTITIONKEY         = "x-ms-documentdb-partitionkey"
+	HEADER_INDEXINGDIRECTIVE    = "x-ms-indexing-directive"
+	HEADER_TRIGGER_PRE_INCLUDE  = "x-ms-documentdb-pre-trigger-include"
+	HEADER_TRIGGER_PRE_EXCLUDE  = "x-ms-documentdb-pre-trigger-exclude"
+	HEADER_TRIGGER_POST_INCLUDE = "x-ms-documentdb-post-trigger-include"
+	HEADER_TRIGGER_POST_EXCLUDE = "x-ms-documentdb-post-trigger-exclude"
 )
 
 type RequestOptions map[RequestOption]string
