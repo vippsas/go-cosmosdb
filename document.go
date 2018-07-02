@@ -129,20 +129,16 @@ func (ops GetDocumentOptions) AsHeaders() (map[string]string, error) {
 }
 
 func (c *Client) GetDocument(ctx context.Context, dbName, colName, id string,
-	ops *RequestOptions, out interface{}) error {
+	ops *GetDocumentOptions, out interface{}) error {
 
-	// add optional headers
-	headers := map[string]string{}
-
-	if ops != nil {
-		for k, v := range *ops {
-			headers[string(k)] = v
-		}
+	headers, err := ops.AsHeaders()
+	if err != nil {
+		return err
 	}
 
 	link := createDocLink(dbName, colName, id)
 
-	err := c.get(ctx, link, out, headers)
+	err = c.get(ctx, link, out, headers)
 	if err != nil {
 		return err
 	}
