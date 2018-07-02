@@ -47,6 +47,14 @@ func (ops CreateDocumentOptions) AsHeaders() (map[string]string, error) {
 		headers[HEADER_INDEXINGDIRECTIVE] = string(ops.IndexingDirective)
 	}
 
+	if ops.PreTriggersInclude != nil && len(ops.PreTriggersInclude) > 0 {
+		headers[HEADER_TRIGGER_PRE_INCLUDE] = strings.Join(ops.PreTriggersInclude, ",")
+	}
+
+	if ops.PostTriggersInclude != nil && len(ops.PostTriggersInclude) > 0 {
+		headers[HEADER_TRIGGER_POST_INCLUDE] = strings.Join(ops.PostTriggersInclude, ",")
+	}
+
 	return headers, nil
 }
 
