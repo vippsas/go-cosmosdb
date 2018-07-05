@@ -132,6 +132,9 @@ func (c *Client) checkResponse(ctx context.Context, retryCount int, resp *http.R
 	if resp.StatusCode == http.StatusPreconditionFailed {
 		return ErrPreconditionFailed
 	}
+	if resp.StatusCode == http.StatusConflict {
+		return ErrConflict
+	}
 	if resp.StatusCode >= 300 {
 		err := &RequestError{}
 		readJson(resp.Body, &err)
