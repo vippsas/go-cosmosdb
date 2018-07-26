@@ -47,28 +47,28 @@ func New(url string, cfg Config, cl *http.Client) *Client {
 	return client
 }
 
-func (c *Client) get(ctx context.Context, link string, ret interface{}, headers map[string]string) error {
-	_, err := c.method(ctx, "GET", link, ret, nil, headers)
+func (c *Client) get(ctx context.Context, link, rType string, ret interface{}, headers map[string]string) error {
+	_, err := c.method(ctx, "GET", link, rType, ret, nil, headers)
 	return err
 }
 
-func (c *Client) create(ctx context.Context, link string, body, ret interface{}, headers map[string]string) error {
+func (c *Client) create(ctx context.Context, link, rType string, body, ret interface{}, headers map[string]string) error {
 	data, err := stringify(body)
 	if err != nil {
 		return err
 	}
 	buf := bytes.NewBuffer(data)
 
-	_, err = c.method(ctx, "POST", link, ret, buf, headers)
+	_, err = c.method(ctx, "POST", link, rType, ret, buf, headers)
 	return err
 }
 
-func (c *Client) delete(ctx context.Context, link string, headers map[string]string) error {
-	_, err := c.method(ctx, "DELETE", link, nil, nil, headers)
+func (c *Client) delete(ctx context.Context, link, rType string, headers map[string]string) error {
+	_, err := c.method(ctx, "DELETE", link, rType, nil, nil, headers)
 	return err
 }
 
-func (c *Client) method(ctx context.Context, method, link string, ret interface{}, body io.Reader, headers map[string]string) (*http.Response, error) {
+func (c *Client) method(ctx context.Context, method, link, rType string, ret interface{}, body io.Reader, headers map[string]string) (*http.Response, error) {
 	req, err := http.NewRequest(method, path(c.Url, link), body)
 	if err != nil {
 		fmt.Println(err)
@@ -77,7 +77,7 @@ func (c *Client) method(ctx context.Context, method, link string, ret interface{
 	fmt.Printf("Will call: %s\n", req.URL)
 	//r := ResourceRequest(link, req)
 
-	defaultHeaders, err := defaultHeaders(method, link, c.Config.MasterKey)
+	defaultHeaders, err := defaultHeaders(method, link, rType, c.Config.MasterKey)
 	if err != nil {
 		fmt.Println(err)
 		return nil, err

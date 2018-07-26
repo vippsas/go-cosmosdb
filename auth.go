@@ -19,12 +19,12 @@ type AuthorizationPayload struct {
 // makeSignedPayload makes a signed payload directly from the required input
 // variables. The returned string can then be used to make the authentication
 // header using `authHeader`.
-func signedPayload(verb, link, date, key string) (string, error) {
+func signedPayload(verb, link, rType, date, key string) (string, error) {
 	if strings.HasPrefix(link, "/") == true {
 		link = link[1:]
 	}
 
-	rLink, rType := resourceTypeFromLink(verb, link)
+	rLink, _ := resourceTypeFromLink(verb, link)
 
 	pl := AuthorizationPayload{
 		Verb:         verb,

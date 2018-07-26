@@ -23,7 +23,7 @@ func TestMakeAuthHeader(t *testing.T) {
 	for _, l := range links {
 		t.Run("case: "+l, func(t *testing.T) {
 
-			sign, err := signedPayload("GET", l, "Thu, 27 Apr 2017 00:51:12 GMT", key)
+			sign, err := signedPayload("GET", l, "dbs", "Thu, 27 Apr 2017 00:51:12 GMT", key)
 			require.Nil(t, err)
 
 			result := authHeader(sign)

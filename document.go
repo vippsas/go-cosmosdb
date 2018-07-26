@@ -74,7 +74,7 @@ func (c *Client) CreateDocument(ctx context.Context, dbName, colName string,
 	resource := &Resource{}
 	link := CreateDocsLink(dbName, colName)
 
-	err = c.create(ctx, link, doc, resource, headers)
+	err = c.create(ctx, link, "docs", doc, resource, headers)
 	if err != nil {
 		return nil, err
 	}
@@ -93,11 +93,55 @@ func (c *Client) UpsertDocument(ctx context.Context, link string,
 	return ErrorNotImplemented
 }
 
+type ListDocumentOptions struct {
+	MaxItemCount     int64
+	Continuation     string
+	ConsistencyLevel ConsistencyLevel
+	SessionToken     string
+	IncrementalFeed  bool
+	IfNoneMatch      string
+	PkRangeId        string
+}
+
+func (ops ListDocumentOptions) AsHeaders() (map[string]string, error) {
+	headers := map[string]string{}
+
+	if ops.MaxItemCount != 0 {
+		headers[HEADER_MAX_ITEM_COUNT] = strconv.FormatInt(ops.MaxItemCount, 10)
+	}
+
+	if ops.Continuation != "" {
+		headers[HEADER_CONTINUATION] = ops.Continuation
+	}
+
+	if ops.SessionToken != "" {
+		headers[HEADER_SESSION_TOKEN] = ops.SessionToken
+	}
+
+	if ops.IncrementalFeed {
+		headers[HEADER_AIM] = "Incremental Feed"
+	}
+
+	if ops.IfNoneMatch != "" {
+		headers[HEADER_IF_NONE_MATCH] = ops.IfNoneMatch
+	}
+
+	if ops.PkRangeId != "" {
+		headers[HEADER_PKRANGEID] = ops.PkRangeId
+	}
+
+	return headers, nil
+}
+
 // ListDocument reads either all documents or the incremental feed, aka.
 // change feed.
 // TODO: probably have to return continuation token for the feed
-func (c *Client) ListDocument(ctx context.Context, link string,
-	ops *RequestOptions, out interface{}) error {
+func (c *Client) ListDocument(ctx context.Context, dbName, colName string,
+	ops *ListDocumentOptions, out interface{}) error {
+
+	//link := "dbs/" + dbName + "/colls/" + colName
+	//resourceType := "docs"
+
 	return ErrorNotImplemented
 }
 
@@ -138,7 +182,7 @@ func (c *Client) GetDocument(ctx context.Context, dbName, colName, id string,
 
 	link := createDocLink(dbName, colName, id)
 
-	err = c.get(ctx, link, out, headers)
+	err = c.get(ctx, link, "docs", out, headers)
 	if err != nil {
 		return err
 	}
@@ -194,7 +238,7 @@ func (c *Client) DeleteDocument(ctx context.Context, dbName, colName, id string,
 
 	link := createDocLink(dbName, colName, id)
 
-	err = c.delete(ctx, link, headers)
+	err = c.delete(ctx, link, "docs", headers)
 	if err != nil {
 		return err
 	}
