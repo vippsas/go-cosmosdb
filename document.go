@@ -136,13 +136,23 @@ func (ops ListDocumentOptions) AsHeaders() (map[string]string, error) {
 // ListDocument reads either all documents or the incremental feed, aka.
 // change feed.
 // TODO: probably have to return continuation token for the feed
-func (c *Client) ListDocument(ctx context.Context, dbName, colName string,
+func (c *Client) ListDocuments(ctx context.Context, dbName, colName string,
 	ops *ListDocumentOptions, out interface{}) error {
 
-	//link := "dbs/" + dbName + "/colls/" + colName
-	//resourceType := "docs"
+	headers, err := ops.AsHeaders()
+	if err != nil {
+		return err
+	}
 
-	return ErrorNotImplemented
+	link := "dbs/" + dbName + "/colls/" + colName + "/docs"
+	rType := "docs"
+
+	err = c.get(ctx, link, rType, out, headers)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 type GetDocumentOptions struct {

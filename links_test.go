@@ -21,6 +21,7 @@ func TestResourceTypeFromLink(t *testing.T) {
 		{"GET", "/dbs/myDb/colls/", "dbs/myDb/colls", "colls"},
 		{"GET", "/dbs/myDb/colls/someCol", "dbs/myDb/colls/someCol", "colls"},
 		{"GET", "/dbs/myDb/colls/someCol/", "dbs/myDb/colls/someCol", "colls"},
+		{"GET", "/dbs/myDb/colls/someCol/docs", "dbs/myDb/colls/someCol", "docs"},
 		{"POST", "/dbs/myDb/colls/myColl/docs/", "dbs/myDb/colls/myColl", "docs"},
 		{"DELETE", "/dbs/db/colls/col/docs/doc", "dbs/db/colls/col/docs/doc", "docs"},
 	}

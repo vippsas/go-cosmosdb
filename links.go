@@ -36,7 +36,11 @@ func resourceTypeFromLink(verb, link string) (rLink, rType string) {
 			rLink = strings.Join(parts[1:l-1], "/")
 			rType = parts[l-3]
 		} else {
-			rLink = strings.Join(parts[1:l-1], "/")
+			if parts[l-2] == "docs" {
+				rLink = strings.Join(parts[1:l-2], "/")
+			} else {
+				rLink = strings.Join(parts[1:l-1], "/")
+			}
 			rType = parts[l-2]
 		}
 	case "POST":

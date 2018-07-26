@@ -114,5 +114,15 @@ func main() {
 		fmt.Println(err)
 	}
 
+	// List Document
+	fmt.Println("List documents")
+	lo := cosmosdb.ListDocumentOptions{}
+	//outList := map[string]interface{}{}
+	var outList interface{}
+	resource, err = client.CreateDocument(context.Background(), cfg.DbName, "invoices", doc, &ops)
+	err = client.ListDocuments(context.Background(), cfg.DbName, "invoices", &lo, &outList)
+
+	fmt.Printf("\nReceived List/Feed: %+v", outList)
+
 	return
 }

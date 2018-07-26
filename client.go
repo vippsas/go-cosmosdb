@@ -182,12 +182,16 @@ func (c *Client) do(ctx context.Context, r *http.Request, data interface{}) (*ht
 		defer resp.Body.Close()
 
 		if err != nil {
+			fmt.Println("err is not nil: ", err)
 			return resp, err
 		}
 
 		if data == nil {
+			fmt.Println("data is nil")
 			return resp, nil
 		}
+
+		fmt.Println("trying to read json")
 		return resp, readJson(resp.Body, data)
 	}
 }
