@@ -92,8 +92,8 @@ func main() {
 	// Get a document with partitionkey
 	fmt.Printf("\nGet document with partition key.\n")
 	doc = ExampleDoc{Id: "aaa"}
-	ro := cosmosdb.RequestOptions{
-		cosmosdb.ReqOpPartitionKey: "[\"asdf\"]",
+	ro := cosmosdb.GetDocumentOptions{
+		PartitionKeyValue: "asdf",
 	}
 	err = client.GetDocument(context.Background(), cfg.DbName, "invoices", "aaa", &ro, &doc)
 	if err != nil {
@@ -105,7 +105,10 @@ func main() {
 
 	// Delete a document with partition key
 	fmt.Printf("\nDelete document with partition key.\n")
-	err = client.DeleteDocument(context.Background(), cfg.DbName, "invoices", "aaa", &ro)
+	do := cosmosdb.DeleteDocumentOptions{
+		PartitionKeyValue: "asdf",
+	}
+	err = client.DeleteDocument(context.Background(), cfg.DbName, "invoices", "aaa", &do)
 	if err != nil {
 		err = errors.WithStack(err)
 		fmt.Println(err)
