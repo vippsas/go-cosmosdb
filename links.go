@@ -12,9 +12,10 @@ func CreateDocsLink(dbName, collName string) string {
 	return "dbs/" + dbName + "/colls/" + collName + "/docs"
 }
 
-func createDocLink(dbName, coll, doc string) string {
-	return "dbs/" + dbName + "/colls/" + coll + "/docs/" + doc
+func createDocLink(dbName, collName, doc string) string {
+	return "dbs/" + dbName + "/colls/" + collName + "/docs/" + doc
 }
+
 
 // resourceTypeFromLink is used to extract the resource type link to use in the
 // payload of the authorization header.

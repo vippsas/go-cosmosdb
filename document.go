@@ -149,12 +149,48 @@ func (c *Client) GetDocument(ctx context.Context, dbName, colName, id string,
 type ReplaceDocumentOptions struct {
 	PreTriggersInclude  []string
 	PostTriggersInclude []string
-	/* TODO */
+	IfMatch             string
+}
+
+func (ops ReplaceDocumentOptions) AsHeaders() (map[string]string, error) {
+	headers := map[string]string{}
+
+	if ops.PreTriggersInclude != nil && len(ops.PreTriggersInclude) > 0 {
+		headers[HEADER_TRIGGER_PRE_INCLUDE] = strings.Join(ops.PreTriggersInclude, ",")
+	}
+
+	if ops.PostTriggersInclude != nil && len(ops.PostTriggersInclude) > 0 {
+		headers[HEADER_TRIGGER_POST_INCLUDE] = strings.Join(ops.PostTriggersInclude, ",")
+	}
+
+	if ops.IfMatch != "" {
+		headers[HEADER_IF_MATCH] = ops.IfMatch
+	}
+
+	return headers, nil
 }
 
 // ReplaceDocument replaces a whole document.
-func (c *Client) ReplaceDocument(ctx context.Context, link string,
-	doc interface{}, ops *RequestOptions, out interface{}) error {
+func (c *Client) ReplaceDocument(ctx context.Context, dbName, colName, id string,
+	doc interface{}, ops *CreateDocumentOptions) error {
+
+	headers := map[string]string{}
+	var err error
+	if ops != nil {
+		headers, err = ops.AsHeaders()
+		if err != nil {
+			return err
+		}
+	}
+
+	link := createDocLink(dbName, colName, id)
+	resource := &Resource{}
+
+	err = c.replace(ctx, link, doc, resource, headers)
+	if err != nil {
+		return err
+	}
+
 	return ErrorNotImplemented
 }
 
