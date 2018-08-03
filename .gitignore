@@ -13,3 +13,6 @@
 
 /jow
 /dist
+
+# Editor files
+.idea/
