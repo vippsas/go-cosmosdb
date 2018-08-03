@@ -23,6 +23,7 @@ func TestResourceTypeFromLink(t *testing.T) {
 		{"GET", "/dbs/myDb/colls/someCol/", "dbs/myDb/colls/someCol", "colls"},
 		{"POST", "/dbs/myDb/colls/myColl/docs/", "dbs/myDb/colls/myColl", "docs"},
 		{"DELETE", "/dbs/db/colls/col/docs/doc", "dbs/db/colls/col/docs/doc", "docs"},
+		{"PUT", "/dbs/db/colls/col/docs/doc", "dbs/db/colls/col/docs/doc", "docs"},
 	}
 	for _, c := range cases {
 		t.Run("case: "+c.verb+": "+c.in, func(t *testing.T) {

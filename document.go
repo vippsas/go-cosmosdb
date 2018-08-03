@@ -182,14 +182,14 @@ func (ops ReplaceDocumentOptions) AsHeaders() (map[string]string, error) {
 
 // ReplaceDocument replaces a whole document.
 func (c *Client) ReplaceDocument(ctx context.Context, dbName, colName, id string,
-	doc interface{}, ops *CreateDocumentOptions) error {
+	doc interface{}, ops *ReplaceDocumentOptions) (*Resource, error) {
 
 	headers := map[string]string{}
 	var err error
 	if ops != nil {
 		headers, err = ops.AsHeaders()
 		if err != nil {
-			return err
+			return nil, err
 		}
 	}
 
@@ -198,10 +198,10 @@ func (c *Client) ReplaceDocument(ctx context.Context, dbName, colName, id string
 
 	err = c.replace(ctx, link, doc, resource, headers)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	return ErrorNotImplemented
+	return resource, nil
 }
 
 // DeleteDocumentOptions contains all options that can be used for deleting
