@@ -147,6 +147,8 @@ func (c *Client) GetDocument(ctx context.Context, dbName, colName, id string,
 }
 
 type ReplaceDocumentOptions struct {
+	PartitionKeyValue   string
+	IndexingDirective   IndexingDirective
 	PreTriggersInclude  []string
 	PostTriggersInclude []string
 	IfMatch             string
@@ -154,6 +156,14 @@ type ReplaceDocumentOptions struct {
 
 func (ops ReplaceDocumentOptions) AsHeaders() (map[string]string, error) {
 	headers := map[string]string{}
+
+	if ops.PartitionKeyValue != "" {
+		headers[HEADER_PARTITIONKEY] = fmt.Sprintf("[\"%s\"]", ops.PartitionKeyValue)
+	}
+
+	if ops.IndexingDirective != "" {
+		headers[HEADER_INDEXINGDIRECTIVE] = string(ops.IndexingDirective)
+	}
 
 	if ops.PreTriggersInclude != nil && len(ops.PreTriggersInclude) > 0 {
 		headers[HEADER_TRIGGER_PRE_INCLUDE] = strings.Join(ops.PreTriggersInclude, ",")
