@@ -116,6 +116,18 @@ func main() {
 	}
 	fmt.Printf("Replaced document: %+v\n", response)
 
+	// Replace a document with partitionkey
+	fmt.Printf("\nReplace document with partition key.\n")
+	doc = ExampleDoc{Id: "aaa", Value: "yet another new value", RecipientPartitionKey: "asdf"}
+	replaceOps.IfMatch = response.Etag
+
+	response, err = client.ReplaceDocument(context.Background(), cfg.DbName, "invoices", "aaa", &doc, &replaceOps)
+	if err != nil {
+		err = errors.WithStack(err)
+		fmt.Println(err)
+	}
+	fmt.Printf("Replaced document: %+v\n", response)
+
 	// Get a document with partitionkey
 	fmt.Printf("\nGet document with partition key.\n")
 	doc = ExampleDoc{Id: "aaa"}
