@@ -79,6 +79,10 @@ func (c *Client) delete(ctx context.Context, link string, headers map[string]str
 	return err
 }
 
+func (c *Client) query(ctx context.Context, link string, body, ret interface{}, headers map[string]string) error {
+	return c.create(ctx, link, body, ret, headers)
+}
+
 func (c *Client) method(ctx context.Context, method, link string, ret interface{}, body io.Reader, headers map[string]string) (*http.Response, error) {
 	req, err := http.NewRequest(method, path(c.Url, link), body)
 	if err != nil {

@@ -72,7 +72,7 @@ func (c *Client) CreateDocument(ctx context.Context, dbName, colName string,
 	}
 
 	resource := &Resource{}
-	link := CreateDocsLink(dbName, colName)
+	link := createDocsLink(dbName, colName)
 
 	err = c.create(ctx, link, doc, resource, headers)
 	if err != nil {
@@ -248,6 +248,63 @@ func (c *Client) DeleteDocument(ctx context.Context, dbName, colName, id string,
 	return nil
 }
 
-func (c *Client) QueryDocuments(ctx context.Context, link string, qry Query, ops *RequestOptions) error {
-	return ErrorNotImplemented
+// QueryDocumentsOptions bundles all options supported by Cosmos DB when
+// querying for documents.
+type QueryDocumentsOptions struct {
+	PartitionKeyValue    string
+	IsQuery              bool
+	ContentType          string
+	MaxItemCount         int
+	Continuation         string
+	EnableCrossPartition bool
+	ConsistencyLevel     ConsistencyLevel
+	SessionToken         string
+}
+
+const QUERY_CONTENT_TYPE = "application/query+json"
+
+// DefaultQueryDocumentOptions returns QueryDocumentsOptions populated with
+// sane defaults. For QueryDocumentsOptions Cosmos DB requires some specific
+// options which are not obvious. This function helps to get things right.
+func DefaultQueryDocumentOptions() QueryDocumentsOptions {
+	return QueryDocumentsOptions{
+		IsQuery:     true,
+		ContentType: QUERY_CONTENT_TYPE,
+	}
+}
+
+func (ops QueryDocumentsOptions) AsHeaders() (map[string]string, error) {
+	headers := map[string]string{}
+
+	//TODO: DRY
+	if ops.PartitionKeyValue != "" {
+		headers[HEADER_PARTITIONKEY] = fmt.Sprintf("[\"%s\"]", ops.PartitionKeyValue)
+	}
+
+	headers[HEADER_IS_QUERY] = strconv.FormatBool(ops.IsQuery)
+
+	if ops.ContentType != QUERY_CONTENT_TYPE {
+		return nil, ErrWrongQueryContentType
+	}
+
+	// TODO: Add missing headers
+
+	return headers, nil
+}
+
+func (c *Client) QueryDocuments(ctx context.Context, dbName, collName string, qry Query, doc interface{}, ops *QueryDocumentsOptions) error {
+
+	headers, err := ops.AsHeaders()
+	if err != nil {
+		return err
+	}
+
+	link := createDocsLink(dbName, collName)
+
+	data := struct {
+		Documents interface{} `json:"Documents,omitempty"`
+		Count     int         `json:"_count,omitempty"`
+	}{Documents: doc}
+
+	return c.query(ctx, link, qry, &data, headers)
 }
