@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"strconv"
+	"strings"
 )
 
 // Document
@@ -26,9 +27,11 @@ const (
 )
 
 type CreateDocumentOptions struct {
-	PartitionKeyValue string
-	IsUpsert          bool
-	IndexingDirective IndexingDirective
+	PartitionKeyValue   string
+	IsUpsert            bool
+	IndexingDirective   IndexingDirective
+	PreTriggersInclude  []string
+	PostTriggersInclude []string
 }
 
 func (ops CreateDocumentOptions) AsHeaders() (map[string]string, error) {
@@ -42,6 +45,14 @@ func (ops CreateDocumentOptions) AsHeaders() (map[string]string, error) {
 
 	if ops.IndexingDirective != "" {
 		headers[HEADER_INDEXINGDIRECTIVE] = string(ops.IndexingDirective)
+	}
+
+	if ops.PreTriggersInclude != nil && len(ops.PreTriggersInclude) > 0 {
+		headers[HEADER_TRIGGER_PRE_INCLUDE] = strings.Join(ops.PreTriggersInclude, ",")
+	}
+
+	if ops.PostTriggersInclude != nil && len(ops.PostTriggersInclude) > 0 {
+		headers[HEADER_TRIGGER_POST_INCLUDE] = strings.Join(ops.PostTriggersInclude, ",")
 	}
 
 	return headers, nil
@@ -72,6 +83,8 @@ func (c *Client) CreateDocument(ctx context.Context, dbName, colName string,
 }
 
 type UpsertDocumentOptions struct {
+	PreTriggersInclude  []string
+	PostTriggersInclude []string
 	/* TODO */
 }
 
@@ -116,20 +129,16 @@ func (ops GetDocumentOptions) AsHeaders() (map[string]string, error) {
 }
 
 func (c *Client) GetDocument(ctx context.Context, dbName, colName, id string,
-	ops *RequestOptions, out interface{}) error {
+	ops *GetDocumentOptions, out interface{}) error {
 
-	// add optional headers
-	headers := map[string]string{}
-
-	if ops != nil {
-		for k, v := range *ops {
-			headers[string(k)] = v
-		}
+	headers, err := ops.AsHeaders()
+	if err != nil {
+		return err
 	}
 
-	link := CreateDocLink(dbName, colName, id)
+	link := createDocLink(dbName, colName, id)
 
-	err := c.get(ctx, link, out, headers)
+	err = c.get(ctx, link, out, headers)
 	if err != nil {
 		return err
 	}
@@ -137,25 +146,101 @@ func (c *Client) GetDocument(ctx context.Context, dbName, colName, id string,
 	return nil
 }
 
-// ReplaceDocument replaces a whole document.
-func (c *Client) ReplaceDocument(ctx context.Context, link string,
-	doc interface{}, ops *RequestOptions, out interface{}) error {
-	return ErrorNotImplemented
+type ReplaceDocumentOptions struct {
+	PartitionKeyValue   string
+	IndexingDirective   IndexingDirective
+	PreTriggersInclude  []string
+	PostTriggersInclude []string
+	IfMatch             string
 }
 
-func (c *Client) DeleteDocument(ctx context.Context, dbName, colName, id string, ops *RequestOptions) error {
-	// add optional headers
+func (ops ReplaceDocumentOptions) AsHeaders() (map[string]string, error) {
 	headers := map[string]string{}
 
+	if ops.PartitionKeyValue != "" {
+		headers[HEADER_PARTITIONKEY] = fmt.Sprintf("[\"%s\"]", ops.PartitionKeyValue)
+	}
+
+	if ops.IndexingDirective != "" {
+		headers[HEADER_INDEXINGDIRECTIVE] = string(ops.IndexingDirective)
+	}
+
+	if ops.PreTriggersInclude != nil && len(ops.PreTriggersInclude) > 0 {
+		headers[HEADER_TRIGGER_PRE_INCLUDE] = strings.Join(ops.PreTriggersInclude, ",")
+	}
+
+	if ops.PostTriggersInclude != nil && len(ops.PostTriggersInclude) > 0 {
+		headers[HEADER_TRIGGER_POST_INCLUDE] = strings.Join(ops.PostTriggersInclude, ",")
+	}
+
+	if ops.IfMatch != "" {
+		headers[HEADER_IF_MATCH] = ops.IfMatch
+	}
+
+	return headers, nil
+}
+
+// ReplaceDocument replaces a whole document.
+func (c *Client) ReplaceDocument(ctx context.Context, dbName, colName, id string,
+	doc interface{}, ops *ReplaceDocumentOptions) (*Resource, error) {
+
+	headers := map[string]string{}
+	var err error
 	if ops != nil {
-		for k, v := range *ops {
-			headers[string(k)] = v
+		headers, err = ops.AsHeaders()
+		if err != nil {
+			return nil, err
 		}
 	}
 
-	link := CreateDocLink(dbName, colName, id)
+	link := createDocLink(dbName, colName, id)
+	resource := &Resource{}
 
-	err := c.delete(ctx, link, headers)
+	err = c.replace(ctx, link, doc, resource, headers)
+	if err != nil {
+		return nil, err
+	}
+
+	return resource, nil
+}
+
+// DeleteDocumentOptions contains all options that can be used for deleting
+// documents.
+type DeleteDocumentOptions struct {
+	PartitionKeyValue   string
+	PreTriggersInclude  []string
+	PostTriggersInclude []string
+	/* TODO */
+}
+
+func (ops DeleteDocumentOptions) AsHeaders() (map[string]string, error) {
+	headers := map[string]string{}
+
+	//TODO: DRY
+	if ops.PartitionKeyValue != "" {
+		headers[HEADER_PARTITIONKEY] = fmt.Sprintf("[\"%s\"]", ops.PartitionKeyValue)
+	}
+
+	if ops.PreTriggersInclude != nil && len(ops.PreTriggersInclude) > 0 {
+		headers[HEADER_TRIGGER_PRE_INCLUDE] = strings.Join(ops.PreTriggersInclude, ",")
+	}
+
+	if ops.PostTriggersInclude != nil && len(ops.PostTriggersInclude) > 0 {
+		headers[HEADER_TRIGGER_POST_INCLUDE] = strings.Join(ops.PostTriggersInclude, ",")
+	}
+
+	return headers, nil
+}
+
+func (c *Client) DeleteDocument(ctx context.Context, dbName, colName, id string, ops *DeleteDocumentOptions) error {
+	headers, err := ops.AsHeaders()
+	if err != nil {
+		return err
+	}
+
+	link := createDocLink(dbName, colName, id)
+
+	err = c.delete(ctx, link, headers)
 	if err != nil {
 		return err
 	}

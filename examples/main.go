@@ -92,8 +92,47 @@ func main() {
 	// Get a document with partitionkey
 	fmt.Printf("\nGet document with partition key.\n")
 	doc = ExampleDoc{Id: "aaa"}
-	ro := cosmosdb.RequestOptions{
-		cosmosdb.ReqOpPartitionKey: "[\"asdf\"]",
+	ro := cosmosdb.GetDocumentOptions{
+		PartitionKeyValue: "asdf",
+	}
+	err = client.GetDocument(context.Background(), cfg.DbName, "invoices", "aaa", &ro, &doc)
+	if err != nil {
+		err = errors.WithStack(err)
+		fmt.Println(err)
+	}
+
+	fmt.Printf("Received document: %+v\n", doc)
+
+	// Replace a document with partitionkey
+	fmt.Printf("\nReplace document with partition key.\n")
+	doc = ExampleDoc{Id: "aaa", Value: "new value", RecipientPartitionKey: "asdf"}
+	replaceOps := cosmosdb.ReplaceDocumentOptions{
+		PartitionKeyValue: "asdf",
+	}
+	response, err := client.ReplaceDocument(context.Background(), cfg.DbName, "invoices", "aaa", &doc, &replaceOps)
+	if err != nil {
+		err = errors.WithStack(err)
+		fmt.Println(err)
+	}
+	fmt.Printf("Replaced document: %+v\n", response)
+
+	// Replace a document with partitionkey
+	fmt.Printf("\nReplace document with partition key.\n")
+	doc = ExampleDoc{Id: "aaa", Value: "yet another new value", RecipientPartitionKey: "asdf"}
+	replaceOps.IfMatch = response.Etag
+
+	response, err = client.ReplaceDocument(context.Background(), cfg.DbName, "invoices", "aaa", &doc, &replaceOps)
+	if err != nil {
+		err = errors.WithStack(err)
+		fmt.Println(err)
+	}
+	fmt.Printf("Replaced document: %+v\n", response)
+
+	// Get a document with partitionkey
+	fmt.Printf("\nGet document with partition key.\n")
+	doc = ExampleDoc{Id: "aaa"}
+	ro = cosmosdb.GetDocumentOptions{
+		PartitionKeyValue: "asdf",
 	}
 	err = client.GetDocument(context.Background(), cfg.DbName, "invoices", "aaa", &ro, &doc)
 	if err != nil {
@@ -105,7 +144,10 @@ func main() {
 
 	// Delete a document with partition key
 	fmt.Printf("\nDelete document with partition key.\n")
-	err = client.DeleteDocument(context.Background(), cfg.DbName, "invoices", "aaa", &ro)
+	do := cosmosdb.DeleteDocumentOptions{
+		PartitionKeyValue: "asdf",
+	}
+	err = client.DeleteDocument(context.Background(), cfg.DbName, "invoices", "aaa", &do)
 	if err != nil {
 		err = errors.WithStack(err)
 		fmt.Println(err)

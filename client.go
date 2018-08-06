@@ -70,6 +70,17 @@ func (c *Client) create(ctx context.Context, link string, body, ret interface{},
 	return err
 }
 
+func (c *Client) replace(ctx context.Context, link string, body, ret interface{}, headers map[string]string) error {
+	data, err := stringify(body)
+	if err != nil {
+		return err
+	}
+	buf := bytes.NewBuffer(data)
+
+	_, err = c.method(ctx, "PUT", link, ret, buf, headers)
+	return err
+}
+
 func (c *Client) delete(ctx context.Context, link string, headers map[string]string) error {
 	_, err := c.method(ctx, "DELETE", link, nil, nil, headers)
 	return err
@@ -138,6 +149,9 @@ func (c *Client) checkResponse(ctx context.Context, retryCount int, resp *http.R
 	}
 	if resp.StatusCode == http.StatusPreconditionFailed {
 		return ErrPreconditionFailed
+	}
+	if resp.StatusCode == http.StatusConflict {
+		return ErrConflict
 	}
 	if resp.StatusCode >= 300 {
 		err := &RequestError{}
