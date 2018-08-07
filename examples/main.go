@@ -157,11 +157,13 @@ func main() {
 		},
 	}
 
-	err = client.QueryDocuments(context.Background(), cfg.DbName, "invoices", qry, doc, &qops)
+	res, err := client.QueryDocuments(context.Background(), cfg.DbName, "invoices", qry, doc, &qops)
 	if err != nil {
 		err = errors.WithStack(err)
 		fmt.Println(err)
 	}
+
+	fmt.Printf("Query results: %+v\n", res)
 
 	// Delete a document with partition key
 	fmt.Printf("\nDelete document with partition key.\n")

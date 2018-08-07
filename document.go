@@ -285,6 +285,8 @@ func (ops QueryDocumentsOptions) AsHeaders() (map[string]string, error) {
 
 	if ops.ContentType != QUERY_CONTENT_TYPE {
 		return nil, ErrWrongQueryContentType
+	} else {
+		headers[HEADER_CONTYPE] = ops.ContentType
 	}
 
 	// TODO: Add missing headers
@@ -292,19 +294,23 @@ func (ops QueryDocumentsOptions) AsHeaders() (map[string]string, error) {
 	return headers, nil
 }
 
-func (c *Client) QueryDocuments(ctx context.Context, dbName, collName string, qry Query, doc interface{}, ops *QueryDocumentsOptions) error {
+// TODO: left of here: add struct to represent query results and add as return
+// type
+func (c *Client) QueryDocuments(ctx context.Context, dbName, collName string, qry Query, doc interface{}, ops *QueryDocumentsOptions) (*QueryDocumentsResponse, error) {
 
 	headers, err := ops.AsHeaders()
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	link := createDocsLink(dbName, collName)
 
-	data := struct {
-		Documents interface{} `json:"Documents,omitempty"`
-		Count     int         `json:"_count,omitempty"`
-	}{Documents: doc}
+	results := QueryDocumentsResponse{}
 
-	return c.query(ctx, link, qry, &data, headers)
+	err = c.query(ctx, link, qry, &results, headers)
+	if err != nil {
+		return nil, err
+	}
+
+	return &results, nil
 }
