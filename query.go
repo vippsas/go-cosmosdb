@@ -1,7 +1,7 @@
 package cosmosdb
 
 type Query struct {
-	Text   string       `json:"query"`
+	Query  string       `json:"query"`
 	Params []QueryParam `json:"parameters,omitempty"`
 	Token  string       `json:"-"` // continuation token
 }
@@ -11,6 +11,12 @@ type QueryParam struct {
 	Value interface{} `json:"value"`
 }
 
+// TODO: add missing fields
+type QueryDocumentsResponse struct {
+	Documents interface{}
+	Count     int `json:"_count"`
+}
+
 // NewQuery create a query with given parameters.
 //
 // Example:
@@ -18,11 +24,11 @@ type QueryParam struct {
 // 		`SELECT * FROM root r WHERE (r.id = @id)`,
 //		map[string]interface{}{"@id": "foo"},
 //	)
-func NewQuery(qu string, params map[string]interface{}) *Query {
-	q := &Query{Text: qu}
-	q.Params = make([]QueryParam, 0, len(params))
-	for name, val := range params {
-		q.Params = append(q.Params, QueryParam{Name: name, Value: val})
-	}
-	return q
-}
+//func NewQuery(qu string, params map[string]interface{}) *Query {
+//q := &Query{Query: qu}
+//q.Params = make([]QueryParam, 0, len(params))
+//for name, val := range params {
+//q.Params = append(q.Params, QueryParam{Name: name, Value: val})
+//}
+//return q
+//}

@@ -142,6 +142,29 @@ func main() {
 
 	fmt.Printf("Received document: %+v\n", doc)
 
+	// Query Documents
+	fmt.Println("Query Documents")
+	qops := cosmosdb.DefaultQueryDocumentOptions()
+	qops.PartitionKeyValue = "asdf"
+
+	qry := cosmosdb.Query{
+		Query: "SELECT * FROM c WHERE c.id = @id",
+		Params: []cosmosdb.QueryParam{
+			{
+				Name:  "@id",
+				Value: "aaa",
+			},
+		},
+	}
+
+	res, err := client.QueryDocuments(context.Background(), cfg.DbName, "invoices", qry, doc, &qops)
+	if err != nil {
+		err = errors.WithStack(err)
+		fmt.Println(err)
+	}
+
+	fmt.Printf("Query results: %+v\n", res)
+
 	// Delete a document with partition key
 	fmt.Printf("\nDelete document with partition key.\n")
 	do := cosmosdb.DeleteDocumentOptions{

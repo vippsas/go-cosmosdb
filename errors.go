@@ -10,5 +10,6 @@ var (
 	ErrPreconditionFailed = errors.New("precondition failed")
 	ErrorNotImplemented   = errors.New("not implemented")
 
-	ErrConflict = errors.New("Resource with specified id or name already exists.")
+	ErrConflict              = errors.New("Resource with specified id or name already exists.")
+	ErrWrongQueryContentType = errors.New("Wrong content type. Must be " + QUERY_CONTENT_TYPE)
 )

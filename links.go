@@ -8,7 +8,7 @@ func CreateCollLink(dbName, collName string) string {
 	return "dbs/" + dbName + "/colls/" + collName
 }
 
-func CreateDocsLink(dbName, collName string) string {
+func createDocsLink(dbName, collName string) string {
 	return "dbs/" + dbName + "/colls/" + collName + "/docs"
 }
 
