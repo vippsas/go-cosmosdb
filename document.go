@@ -294,9 +294,10 @@ func (ops QueryDocumentsOptions) AsHeaders() (map[string]string, error) {
 	return headers, nil
 }
 
-// TODO: left of here: add struct to represent query results and add as return
-// type
-func (c *Client) QueryDocuments(ctx context.Context, dbName, collName string, qry Query, doc interface{}, ops *QueryDocumentsOptions) (*QueryDocumentsResponse, error) {
+// QueryDocuments queries a collection in cosmosdb with the provided query.
+// To correctly parse the returned results you currently have to pass in
+// a slice for the returned documents, not a single document.
+func (c *Client) QueryDocuments(ctx context.Context, dbName, collName string, qry Query, docs interface{}, ops *QueryDocumentsOptions) (*QueryDocumentsResponse, error) {
 
 	headers, err := ops.AsHeaders()
 	if err != nil {
@@ -305,7 +306,9 @@ func (c *Client) QueryDocuments(ctx context.Context, dbName, collName string, qr
 
 	link := createDocsLink(dbName, collName)
 
-	results := QueryDocumentsResponse{}
+	results := QueryDocumentsResponse{
+		Documents: docs,
+	}
 
 	err = c.query(ctx, link, qry, &results, headers)
 	if err != nil {
