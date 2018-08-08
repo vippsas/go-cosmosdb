@@ -157,13 +157,18 @@ func main() {
 		},
 	}
 
-	res, err := client.QueryDocuments(context.Background(), cfg.DbName, "invoices", qry, doc, &qops)
+	var docs []ExampleDoc
+	fmt.Printf("docs: %+v\n", docs)
+	res, err := client.QueryDocuments(context.Background(), cfg.DbName, "invoices", qry, &docs, &qops)
 	if err != nil {
 		err = errors.WithStack(err)
 		fmt.Println(err)
 	}
+	//fmt.Printf("type of Documents: kind: %s", reflect.TypeOf
 
 	fmt.Printf("Query results: %+v\n", res)
+	fmt.Printf("Query results: %+v\n", res.Documents)
+	fmt.Printf("Docs after: %+v\n", docs)
 
 	// Delete a document with partition key
 	fmt.Printf("\nDelete document with partition key.\n")
