@@ -22,6 +22,8 @@ const (
 	HEADER_CHARGE            = "X-Ms-Request-Charge"
 	HEADER_CONSISTENCY_LEVEL = "x-ms-consistency-level"
 	HEADER_SESSION_TOKEN     = "x-ms-session-token"
+	HEADER_OFFER_THROUGHPUT  = "x-ms-offer-throughput"
+	HEADER_OFFER_TYPE        = "x-ms-offer-type"
 
 	HEADER_CROSSPARTITION       = "x-ms-documentdb-query-enablecrosspartition"
 	HEADER_PARTITIONKEY         = "x-ms-documentdb-partitionkey"
