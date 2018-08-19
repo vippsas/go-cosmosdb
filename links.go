@@ -41,13 +41,6 @@ func resourceTypeFromLink(verb, link string) (rLink, rType string) {
 	parts := strings.Split(link, "/")
 	l := len(parts)
 
-	// When the input is /dbs
-	if l==3 {
-		rType = parts[1]
-		rLink = parts[1]
-		return
-	}
-
 	if l%2 == 0 {
 		rType = parts[l-3]
 		rLink = strings.Join(parts[1:l-1], "/")

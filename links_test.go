@@ -13,8 +13,8 @@ func TestResourceTypeFromLink(t *testing.T) {
 		rLink string
 		rType string
 	}{
-		{"GET", "/dbs", "dbs", "dbs"},
-		{"GET", "dbs", "dbs", "dbs"},
+		{"GET", "/dbs", "", "dbs"},
+		{"GET", "dbs", "", "dbs"},
 		{"GET", "/dbs/myDb", "dbs/myDb", "dbs"},
 		{"GET", "/dbs/myDb/", "dbs/myDb", "dbs"},
 		{"GET", "/dbs/myDb/colls", "dbs/myDb", "colls"},
