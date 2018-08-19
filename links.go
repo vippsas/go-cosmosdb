@@ -4,6 +4,11 @@ import (
 	"strings"
 )
 
+
+func CreateTriggerLink(dbName, collName, triggerName string) string {
+	return "dbs/" + dbName + "/colls/" + collName + "/triggers/" + triggerName
+}
+
 func CreateCollLink(dbName, collName string) string {
 	return "dbs/" + dbName + "/colls/" + collName
 }
@@ -19,9 +24,16 @@ func createDocLink(dbName, collName, doc string) string {
 // resourceTypeFromLink is used to extract the resource type link to use in the
 // payload of the authorization header.
 func resourceTypeFromLink(verb, link string) (rLink, rType string) {
+	if link == "" {
+		return "", ""
+	}
+
+	// Ensure link has leading '/'
 	if strings.HasPrefix(link, "/") == false {
 		link = "/" + link
 	}
+
+	// Ensure link ends with '/'
 	if strings.HasSuffix(link, "/") == false {
 		link = link + "/"
 	}
@@ -29,34 +41,23 @@ func resourceTypeFromLink(verb, link string) (rLink, rType string) {
 	parts := strings.Split(link, "/")
 	l := len(parts)
 
-	// TODO: extend with missing http verbs.
-	switch verb {
-	case "GET", "DELETE", "PUT":
-		if l%2 == 0 {
-			rLink = strings.Join(parts[1:l-1], "/")
-			rType = parts[l-3]
-		} else {
-			rLink = strings.Join(parts[1:l-1], "/")
-			rType = parts[l-2]
-		}
-	case "POST":
-		if l%2 == 0 {
-			rLink = strings.Join(parts[1:l-2], "/")
-			rType = parts[l-3]
-		} else {
-			rLink = strings.Join(parts[1:l-2], "/")
-			rType = parts[l-2]
-		}
+	// When the input is /dbs
+	if l==3 {
+		rType = parts[1]
+		rLink = parts[1]
+		return
+	}
 
-	default:
-		if l%2 == 0 {
-			rLink = strings.Join(parts[0:l-2], "/")
-			rType = parts[l-3]
-		} else {
-			//rLink = strings.Join(parts[0:l-2], "/")
-			rLink = link
-			rType = parts[l-2]
-		}
+	if l%2 == 0 {
+		rType = parts[l-3]
+		rLink = strings.Join(parts[1:l-1], "/")
+	} else {
+		// E.g. /dbs/myDb/colls/myColl/docs/
+		// In this scenario the link is incomplete.
+		// I.e. it does not not point to a specific resource
+
+		rType = parts[l-2]
+		rLink = strings.Join(parts[1:l-2], "/")
 	}
 
 	return
