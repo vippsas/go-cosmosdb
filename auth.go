@@ -24,7 +24,7 @@ func signedPayload(verb, link, date, key string) (string, error) {
 		link = link[1:]
 	}
 
-	rLink, rType := resourceTypeFromLink(verb, link)
+	rLink, rType := resourceTypeFromLink(link)
 
 	pl := AuthorizationPayload{
 		Verb:         verb,

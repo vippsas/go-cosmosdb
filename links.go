@@ -23,7 +23,7 @@ func createDocLink(dbName, collName, doc string) string {
 
 // resourceTypeFromLink is used to extract the resource type link to use in the
 // payload of the authorization header.
-func resourceTypeFromLink(verb, link string) (rLink, rType string) {
+func resourceTypeFromLink(link string) (rLink, rType string) {
 	if link == "" {
 		return "", ""
 	}
@@ -40,6 +40,14 @@ func resourceTypeFromLink(verb, link string) (rLink, rType string) {
 
 	parts := strings.Split(link, "/")
 	l := len(parts)
+
+	// Offer is inconsistent from the rest of the API
+	// For details see "Headers" block on https://docs.microsoft.com/en-us/rest/api/cosmos-db/get-an-offer
+	if parts[1] == "offers" {
+		rType = parts[1]
+		rLink = strings.ToLower(parts[2])
+		return
+	}
 
 	if l%2 == 0 {
 		rType = parts[l-3]
