@@ -1,0 +1,51 @@
+[
+  {
+    "databaseId": "vippsinvoice",
+    "collectionId": "invoice_test_1",
+    "offer": {
+      "throughput": 10000
+    },
+    "indexingPolicy": {
+      "automatic": true,
+      "indexingMode": "consistent",
+      "includedPaths": [
+        {
+          "path": "/*",
+          "indexes": [
+            {
+              "dataType": "String",
+              "precision": -1,
+              "kind": "Range"
+            }
+          ]
+        }
+      ]
+    },
+    "partitionKey": {
+      "paths": ["/invoiceId"],
+      "kind": "Hash"
+    },
+    "triggers": [
+      {
+        "id": "postCreateInvoice",
+        "triggerType": "Post",
+        "triggerOperation": "Create",
+        "body": {
+          "sourceLocation": "inline",
+          "inlineSource": "function triggerPostCreateInvoice() {\n    let context = getContext();\n    let collection = context.getCollection();\n    let request = context.getRequest();\n    let createdDoc = request.getBody();\n    let invoiceId = createdDoc.invoiceId;\n    let created = new Date().toISOString();\n    let status = {\n        state: \"pending\",\n        created: created\n    };\n    let currentStatusDoc = {\n        id: invoiceId + \".test.currentStatus\",\n        count: 0,\n        invoiceId: invoiceId,\n        modified: created,\n        created: created,\n        status: status\n    };\n    let statusesDoc = {\n        id: invoiceId + \".test.statuses\",\n        invoiceId: invoiceId,\n        statuses: [status],\n        modified: created,\n        created: created\n    };\n    let statusDoc = {\n        id: invoiceId + \".test.status.\" + currentStatusDoc.count,\n        invoiceId: invoiceId,\n        status: status,\n        created: created,\n        isStatusDoc: true\n    };\n    let accepted = collection.createDocument(collection.getSelfLink(), currentStatusDoc, (err, documentCreated) => {\n        if (err) {\n            throw new Error(\"Error\" + err.message);\n        }\n    });\n    if (!accepted) {\n        return;\n    }\n    accepted = collection.createDocument(collection.getSelfLink(), statusDoc, (err, documentCreated) => {\n        if (err) {\n            throw new Error(\"Error\" + err.message);\n        }\n    });\n    if (!accepted) {\n        return;\n    }\n    accepted = collection.createDocument(collection.getSelfLink(), statusesDoc, (err, documentCreated) => {\n        if (err) {\n            throw new Error(\"Error\" + err.message);\n        }\n    });\n    if (!accepted) {\n        return;\n    }\n}\n\n"
+        }
+      },
+      {
+        "id": "postCreateInvoice2",
+        "triggerType": "Post",
+        "triggerOperation": "Create",
+        "body": {
+          "sourceLocation": "file",
+          "filePath": "./cmd/cosmosdb-apply/postCreateInvoiceTrigger.js"
+        }
+      }
+    ],
+    "udfs": [],
+    "sprocs": []
+  }
+]

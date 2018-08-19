@@ -11,12 +11,24 @@ type Database struct {
 	Users string `json:"_users,omitempty"`
 }
 
+type CreateDatabaseOptions struct {
+	ID string `json:"id"`
+}
+
 func createDatabaseLink(dbName string) string {
 	return "dbs/" + dbName
 }
 
+// https://docs.microsoft.com/en-us/rest/api/cosmos-db/create-a-database
 func (c *Client) CreateDatabase(ctx context.Context, dbName string, ops *RequestOptions) (*Database, error) {
-	return nil, ErrorNotImplemented
+	db := &Database{}
+
+	err := c.create(ctx, createDatabaseLink(""), CreateDatabaseOptions{dbName}, db, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return db, nil
 }
 
 func (c *Client) ListDatabases(ctx context.Context, ops *RequestOptions) ([]Database, error) {
