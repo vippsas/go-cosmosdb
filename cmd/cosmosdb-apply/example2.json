@@ -1,7 +1,7 @@
 [
   {
-    "databaseId": "vippsinvoice",
-    "collectionId": "invoice_test_2",
+    "databaseId": "someDatabase",
+    "collectionId": "someCollection2",
     "offer": {
       "throughput": 400
     },
@@ -22,11 +22,10 @@
       ]
     },
     "partitionKey": {
-      "paths": ["/invoiceId"],
+      "paths": ["/someOtherId"],
       "kind": "Hash"
     },
-    "triggers": [
-    ],
+    "triggers": [],
     "udfs": [],
     "sprocs": []
   }
