@@ -178,7 +178,7 @@ func handleCollectionDefinition(def collectionDefinition, client *cosmosdb.Clien
 
 	// Check triggers
 
-	collectionTriggers, ltErr := client.ListTriggers(context.Background(), def.DatabaseID, def.CollectionID, nil)
+	collectionTriggers, ltErr := client.ListTriggers(context.Background(), def.DatabaseID, def.CollectionID)
 	if ltErr != nil {
 		panicef("Could not list triggers for collection '%s' in DB '%s'", ltErr, def.CollectionID, def.DatabaseID)
 	}
@@ -201,7 +201,7 @@ func getCollection(client *cosmosdb.Client, def collectionDefinition) (*cosmosdb
 	dbName := def.DatabaseID
 	colName := def.CollectionID
 
-	dbCollection, err := client.GetCollection(context.Background(), dbName, colName, nil)
+	dbCollection, err := client.GetCollection(context.Background(), dbName, colName)
 
 	if err != nil {
 		log.Printf("Could not get collection '%s' in database '%s' -> %s", colName, dbName, err.Error())
@@ -220,7 +220,7 @@ func createCollection(def collectionDefinition, client *cosmosdb.Client) {
 		OfferThroughput: cosmosdb.OfferThroughput(def.Offer.Throughput),
 	}
 
-	_, err := client.CreateCollection(context.Background(), def.DatabaseID, colCreateOpts, nil)
+	_, err := client.CreateCollection(context.Background(), def.DatabaseID, colCreateOpts)
 	if err != nil {
 		panicef("Create collection '%s' failed", err, colCreateOpts.Id)
 	}
@@ -235,7 +235,7 @@ func replaceCollection(def collectionDefinition, existingCol *cosmosdb.Collectio
 		PartitionKey:   existingCol.PartitionKey,
 	}
 
-	updatedCol, err := client.ReplaceCollection(context.Background(), def.DatabaseID, colReplaceOpts, nil)
+	updatedCol, err := client.ReplaceCollection(context.Background(), def.DatabaseID, colReplaceOpts)
 	if err != nil {
 		panicef("Could not replace collection '%s'", err, def.CollectionID)
 	}
@@ -263,7 +263,7 @@ func replaceTrigger(trigDef trigger, client *cosmosdb.Client, def collectionDefi
 		Body:      getJavaScriptBody(trigDef.Body),
 	}
 
-	_, trigErr := client.ReplaceTrigger(context.Background(), def.DatabaseID, def.CollectionID, opts, nil)
+	_, trigErr := client.ReplaceTrigger(context.Background(), def.DatabaseID, def.CollectionID, opts)
 	if trigErr != nil {
 		panicef("Updating trigger '%s' on collection '%s' failed", trigErr, trigDef.ID, def.CollectionID)
 
@@ -280,7 +280,7 @@ func createTrigger(trigDef trigger, client *cosmosdb.Client, def collectionDefin
 		Body:      getJavaScriptBody(trigDef.Body),
 	}
 
-	_, trigErr := client.CreateTrigger(context.Background(), def.DatabaseID, def.CollectionID, opts, nil)
+	_, trigErr := client.CreateTrigger(context.Background(), def.DatabaseID, def.CollectionID, opts)
 
 	if trigErr != nil {
 		panicef("Creating trigger '%s' on collection '%s' failed", trigErr, trigDef.ID, def.CollectionID)
