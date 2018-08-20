@@ -49,7 +49,7 @@ type TriggerReplaceOptions struct {
 
 // https://docs.microsoft.com/en-us/rest/api/cosmos-db/create-a-trigger
 func (c *Client) CreateTrigger(ctx context.Context, dbName string, colName string,
-	trigOps TriggerCreateOptions, ops *RequestOptions) (*Trigger, error) {
+	trigOps TriggerCreateOptions) (*Trigger, error) {
 
 	trigger := &Trigger{}
 	link := CreateTriggerLink(dbName, colName, "")
@@ -63,8 +63,7 @@ func (c *Client) CreateTrigger(ctx context.Context, dbName string, colName strin
 }
 
 // https://docs.microsoft.com/en-us/rest/api/cosmos-db/list-triggers
-func (c *Client) ListTriggers(ctx context.Context, dbName string, colName string,
-	ops *RequestOptions) (*CollectionTriggers, error) {
+func (c *Client) ListTriggers(ctx context.Context, dbName string, colName string) (*CollectionTriggers, error) {
 
 	url := CreateCollLink(dbName, colName) + "/triggers"
 
@@ -77,14 +76,13 @@ func (c *Client) ListTriggers(ctx context.Context, dbName string, colName string
 	return colTrigs, nil
 }
 
-func (c *Client) DeleteTrigger(ctx context.Context, dbName, colName string,
-	ops *RequestOptions) error {
+func (c *Client) DeleteTrigger(ctx context.Context, dbName, colName string) error {
 	return ErrorNotImplemented
 }
 
 // https://docs.microsoft.com/en-us/rest/api/cosmos-db/replace-a-trigger
 func (c *Client) ReplaceTrigger(ctx context.Context, dbName, colName string,
-	trigOps TriggerReplaceOptions, ops *RequestOptions) (*Trigger, error) {
+	trigOps TriggerReplaceOptions) (*Trigger, error) {
 
 	trigger := &Trigger{}
 	link := CreateTriggerLink(dbName, colName, trigOps.Id)
