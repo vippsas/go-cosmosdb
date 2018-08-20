@@ -41,7 +41,7 @@
         "triggerOperation": "Create",
         "body": {
           "sourceLocation": "file",
-          "filePath": "./cmd/cosmosdb-apply/exampleTrigger.js"
+          "fileName": "exampleTrigger.js"
         }
       }
     ],

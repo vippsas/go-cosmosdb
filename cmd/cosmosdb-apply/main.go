@@ -151,6 +151,11 @@ func getCollectionDefinitions(filePaths []string) []collectionDefinition {
 			panic(err)
 		}
 
+		// Set file path for all definitions. Used when looking up source.
+		for i := 0; i < len(colDef); i++ {
+			colDef[i].FilePath = filepath.Dir(path)
+		}
+
 		colDefs = append(colDefs, colDef...)
 	}
 
@@ -260,7 +265,7 @@ func replaceTrigger(trigDef trigger, client *cosmosdb.Client, def collectionDefi
 		Id:        trigDef.ID,
 		Type:      cosmosdb.TriggerType(trigDef.TriggerType),
 		Operation: cosmosdb.TriggerOperation(trigDef.TriggerOperation),
-		Body:      getJavaScriptBody(trigDef.Body),
+		Body:      getJavaScriptBody(trigDef.Body, def.FilePath),
 	}
 
 	_, trigErr := client.ReplaceTrigger(context.Background(), def.DatabaseID, def.CollectionID, opts)
@@ -277,7 +282,7 @@ func createTrigger(trigDef trigger, client *cosmosdb.Client, def collectionDefin
 		Id:        trigDef.ID,
 		Type:      cosmosdb.TriggerType(trigDef.TriggerType),
 		Operation: cosmosdb.TriggerOperation(trigDef.TriggerOperation),
-		Body:      getJavaScriptBody(trigDef.Body),
+		Body:      getJavaScriptBody(trigDef.Body, def.FilePath),
 	}
 
 	_, trigErr := client.CreateTrigger(context.Background(), def.DatabaseID, def.CollectionID, opts)
@@ -289,20 +294,20 @@ func createTrigger(trigDef trigger, client *cosmosdb.Client, def collectionDefin
 	log.Printf("Trigger '%s' was created\n", trigDef.ID)
 }
 
-func getJavaScriptBody(body triggerBody) string {
+func getJavaScriptBody(body triggerBody, directory string) string {
 	switch body.SourceLocation {
 
 	case "inline":
 		return body.InlineSource
 
 	case "file":
-		// NOTE: This can potentially be a security issue if the process is run with
-		// to high privileges. Be careful!
 
-		absFilePath, _ := filepath.Abs(body.FilePath)
-		source, err := ioutil.ReadFile(absFilePath)
+		absFilePath, _ := filepath.Abs(directory)
+		filePath := filepath.Join(absFilePath, body.FileName)
+		source, err := ioutil.ReadFile(filePath)
+
 		if err != nil {
-			panicef("Could not read source file from '%s'", err, body.FilePath)
+			panicef("Could not read source file from '%s'", err, filePath)
 		}
 
 		return string(source)
@@ -323,7 +328,6 @@ func replaceOffers(def collectionDefinition, dbCol *cosmosdb.Collection, client 
 	for _, off := range dbOffers.Offers {
 		if off.OfferResourceId == dbCol.Rid {
 			// offer applies to this resource
-			fmt.Printf("%+v\n", off)
 
 			offReplOpts := cosmosdb.OfferReplaceOptions{
 				Rid:              off.Rid,
@@ -349,6 +353,7 @@ func replaceOffers(def collectionDefinition, dbCol *cosmosdb.Collection, client 
 // --- Inline types used to deserialize the input
 
 type collectionDefinition struct {
+	FilePath     string
 	DatabaseID   string `json:"databaseId"`
 	CollectionID string `json:"collectionId"`
 	Offer        struct {
@@ -372,5 +377,5 @@ type trigger struct {
 type triggerBody struct {
 	SourceLocation string `json:"sourceLocation"`
 	InlineSource   string `json:"inlineSource,omitempty"`
-	FilePath       string `json:"filePath,omitempty"`
+	FileName       string `json:"fileName,omitempty"`
 }
