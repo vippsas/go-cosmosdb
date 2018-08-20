@@ -1,0 +1,32 @@
+[
+  {
+    "databaseId": "someDatabase",
+    "collectionId": "someCollection2",
+    "offer": {
+      "throughput": 400
+    },
+    "indexingPolicy": {
+      "automatic": false,
+      "indexingMode": "lazy",
+      "includedPaths": [
+        {
+          "path": "/*",
+          "indexes": [
+            {
+              "dataType": "String",
+              "precision": -1,
+              "kind": "Range"
+            }
+          ]
+        }
+      ]
+    },
+    "partitionKey": {
+      "paths": ["/someOtherId"],
+      "kind": "Hash"
+    },
+    "triggers": [],
+    "udfs": [],
+    "sprocs": []
+  }
+]

@@ -35,8 +35,6 @@ type IndexingPolicy struct {
 }
 
 type IndexingMode string
-type OfferThroughput int32
-type OfferType string
 
 //const (
 //	Consistent = IndexingMode("Consistent")
@@ -137,7 +135,14 @@ func (c *Client) ListCollections(ctx context.Context, dbName string) (*DocumentC
 }
 
 func (c *Client) GetCollection(ctx context.Context, dbName, colName string) (*Collection, error) {
-	return nil, ErrorNotImplemented
+	collection := &Collection{}
+	link := CreateCollLink(dbName, colName)
+	err := c.get(ctx, link, collection, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return collection, nil
 }
 
 func (c *Client) DeleteCollection(ctx context.Context, dbName, colName string) error {
