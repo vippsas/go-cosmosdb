@@ -6,6 +6,10 @@ import (
 	"github.com/pkg/errors"
 )
 
+var (
+	ErrThroughputRequiresPartitionKey = errors.New("Must specify PartitionKey when OfferThroughput is >= 10000")
+)
+
 type Collection struct {
 	Resource
 	IndexingPolicy *IndexingPolicy `json:"indexingPolicy,omitempty"`
@@ -62,6 +66,24 @@ type CollectionCreateOptions struct {
 	OfferType OfferType `json:"offerType,omitempty"`
 }
 
+func (colOps CollectionCreateOptions) AsHeaders() (map[string]string, error) {
+	headers := make(map[string]string)
+
+	if colOps.OfferThroughput > 0 {
+		headers[HEADER_OFFER_THROUGHPUT] = fmt.Sprintf("%d", colOps.OfferThroughput)
+	}
+
+	if colOps.OfferThroughput >= 10000 && colOps.PartitionKey == nil {
+		return nil, ErrThroughputRequiresPartitionKey
+	}
+
+	if colOps.OfferType != "" {
+		headers[HEADER_OFFER_TYPE] = fmt.Sprintf("%s", colOps.OfferType)
+	}
+
+	return headers, nil
+}
+
 type CollectionReplaceOptions struct {
 	Resource
 	Id             string          `json:"id"`
@@ -71,9 +93,12 @@ type CollectionReplaceOptions struct {
 
 // https://docs.microsoft.com/en-us/rest/api/cosmos-db/create-a-collection
 func (c *Client) CreateCollection(ctx context.Context, dbName string,
-	colOps CollectionCreateOptions, ops *RequestOptions) (*Collection, error) {
+	colOps CollectionCreateOptions) (*Collection, error) {
 
-	headers := make(map[string]string)
+	headers, hErr := colOps.AsHeaders()
+	if hErr != nil {
+		return nil, hErr
+	}
 
 	if colOps.OfferThroughput > 0 {
 		headers[HEADER_OFFER_THROUGHPUT] = fmt.Sprintf("%d", colOps.OfferThroughput)
@@ -99,8 +124,7 @@ func (c *Client) CreateCollection(ctx context.Context, dbName string,
 }
 
 // https://docs.microsoft.com/en-us/rest/api/cosmos-db/list-collections
-func (c *Client) ListCollections(ctx context.Context, dbName string,
-	ops *RequestOptions) (*DocumentCollection, error) {
+func (c *Client) ListCollections(ctx context.Context, dbName string) (*DocumentCollection, error) {
 	url := createDatabaseLink(dbName) + "/colls"
 
 	docCol := &DocumentCollection{}
@@ -112,19 +136,17 @@ func (c *Client) ListCollections(ctx context.Context, dbName string,
 	return docCol, nil
 }
 
-func (c *Client) GetCollection(ctx context.Context, dbName, colName string,
-	ops *RequestOptions) (*Collection, error) {
+func (c *Client) GetCollection(ctx context.Context, dbName, colName string) (*Collection, error) {
 	return nil, ErrorNotImplemented
 }
 
-func (c *Client) DeleteCollection(ctx context.Context, dbName, colName string,
-	ops *RequestOptions) error {
+func (c *Client) DeleteCollection(ctx context.Context, dbName, colName string) error {
 	return ErrorNotImplemented
 }
 
 // https://docs.microsoft.com/en-us/rest/api/cosmos-db/replace-a-collection
 func (c *Client) ReplaceCollection(ctx context.Context, dbName string,
-	colOps CollectionReplaceOptions, ops *RequestOptions) (*Collection, error) {
+	colOps CollectionReplaceOptions) (*Collection, error) {
 
 	collection := &Collection{}
 	link := CreateCollLink(dbName, colOps.Id)
@@ -138,7 +160,6 @@ func (c *Client) ReplaceCollection(ctx context.Context, dbName string,
 }
 
 // TODO: add model for partition key ranges
-func (c *Client) GetPartitionKeyRanges(ctx context.Context, dbName, colName string,
-	ops *RequestOptions) error {
+func (c *Client) GetPartitionKeyRanges(ctx context.Context, dbName, colName string) error {
 	return ErrorNotImplemented
 }
