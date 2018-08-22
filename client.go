@@ -10,6 +10,8 @@ import (
 	"net/http"
 	"strings"
 	"time"
+
+	"github.com/pkg/errors"
 )
 
 func init() {
@@ -22,7 +24,8 @@ var (
 	// TODO: useful?
 	IgnoreContext bool
 	// TODO: check thread safety
-	ResponseHook func(ctx context.Context, method string, headers map[string][]string)
+	ResponseHook            func(ctx context.Context, method string, headers map[string][]string)
+	errUnexpectedHTTPStatus = errors.New("Unexpected HTTP return status")
 )
 
 // Config is required as input parameter for the constructor creating a new
@@ -151,7 +154,11 @@ func (c *Client) checkResponse(ctx context.Context, retryCount int, resp *http.R
 			}
 		}
 	}
-	return CosmosHTTPErrors[resp.StatusCode]
+	if cosmosError, ok := CosmosHTTPErrors[resp.StatusCode]; ok {
+		return cosmosError
+	}
+	return errUnexpectedHTTPStatus
+
 }
 
 // Private Do function, DRY
