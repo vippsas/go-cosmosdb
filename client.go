@@ -10,6 +10,8 @@ import (
 	"net/http"
 	"strings"
 	"time"
+
+	"github.com/pkg/errors"
 )
 
 func init() {
@@ -22,7 +24,8 @@ var (
 	// TODO: useful?
 	IgnoreContext bool
 	// TODO: check thread safety
-	ResponseHook func(ctx context.Context, method string, headers map[string][]string)
+	ResponseHook            func(ctx context.Context, method string, headers map[string][]string)
+	errUnexpectedHTTPStatus = errors.New("Unexpected HTTP return status")
 )
 
 // Config is required as input parameter for the constructor creating a new
@@ -151,19 +154,11 @@ func (c *Client) checkResponse(ctx context.Context, retryCount int, resp *http.R
 			}
 		}
 	}
-	if resp.StatusCode == http.StatusPreconditionFailed {
-		return ErrPreconditionFailed
+	if cosmosError, ok := CosmosHTTPErrors[resp.StatusCode]; ok {
+		return cosmosError
 	}
-	if resp.StatusCode == http.StatusConflict {
-		return ErrConflict
-	}
-	if resp.StatusCode >= 300 {
-		err := &RequestError{}
-		readJson(resp.Body, &err)
-		return err
-	}
+	return errUnexpectedHTTPStatus
 
-	return nil
 }
 
 // Private Do function, DRY
