@@ -138,7 +138,7 @@ func (ops GetDocumentOptions) AsHeaders() (map[string]string, error) {
 }
 
 func (c *Client) GetDocument(ctx context.Context, dbName, colName, id string,
-	ops *GetDocumentOptions, out interface{}) error {
+	ops GetDocumentOptions, out interface{}) error {
 
 	headers, err := ops.AsHeaders()
 	if err != nil {
