@@ -36,11 +36,9 @@ type OfferReplaceOptions struct {
 	Rid              string                 `json:"_rid"`
 }
 
-
 func createOfferLink(offerId string) string {
 	return "offers/" + offerId
 }
-
 
 // https://docs.microsoft.com/en-us/rest/api/cosmos-db/get-an-offer
 func (c *Client) GetOffer(ctx context.Context, offerId string, ops *RequestOptions) (*Offer, error) {
@@ -73,7 +71,7 @@ func (c *Client) ReplaceOffer(ctx context.Context, offerOps OfferReplaceOptions,
 	offer := &Offer{}
 	link := createOfferLink(offerOps.Rid)
 
-	err := c.replace(ctx, link, offerOps, offer, nil)
+	_, err := c.replace(ctx, link, offerOps, offer, nil)
 	if err != nil {
 		return nil, err
 	}

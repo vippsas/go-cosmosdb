@@ -13,8 +13,10 @@ type QueryParam struct {
 
 // TODO: add missing fields
 type QueryDocumentsResponse struct {
-	Documents interface{}
-	Count     int `json:"_count"`
+	Documents    interface{}
+	Count        int `json:"_count"`
+	Continuation string
+	RUs          int
 }
 
 // NewQuery create a query with given parameters.

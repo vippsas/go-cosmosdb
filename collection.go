@@ -3,6 +3,7 @@ package cosmosdb
 import (
 	"context"
 	"fmt"
+
 	"github.com/pkg/errors"
 )
 
@@ -113,7 +114,7 @@ func (c *Client) CreateCollection(ctx context.Context, dbName string,
 	collection := &Collection{}
 	link := CreateCollLink(dbName, "")
 
-	err := c.create(ctx, link, colOps, collection, headers)
+	_, err := c.create(ctx, link, colOps, collection, headers)
 	if err != nil {
 		return nil, err
 	}
@@ -156,7 +157,7 @@ func (c *Client) ReplaceCollection(ctx context.Context, dbName string,
 	collection := &Collection{}
 	link := CreateCollLink(dbName, colOps.Id)
 
-	err := c.replace(ctx, link, colOps, collection, nil)
+	_, err := c.replace(ctx, link, colOps, collection, nil)
 	if err != nil {
 		return nil, err
 	}
