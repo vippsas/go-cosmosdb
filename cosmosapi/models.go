@@ -1,4 +1,4 @@
-package cosmosdb
+package cosmosapi
 
 type DataType string
 
