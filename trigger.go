@@ -54,7 +54,7 @@ func (c *Client) CreateTrigger(ctx context.Context, dbName string, colName strin
 	trigger := &Trigger{}
 	link := CreateTriggerLink(dbName, colName, "")
 
-	err := c.create(ctx, link, trigOps, trigger, nil)
+	_, err := c.create(ctx, link, trigOps, trigger, nil)
 
 	if err != nil {
 		return nil, err
@@ -87,7 +87,7 @@ func (c *Client) ReplaceTrigger(ctx context.Context, dbName, colName string,
 	trigger := &Trigger{}
 	link := CreateTriggerLink(dbName, colName, trigOps.Id)
 
-	err := c.replace(ctx, link, trigOps, trigger, nil)
+	_, err := c.replace(ctx, link, trigOps, trigger, nil)
 	if err != nil {
 		return nil, err
 	}

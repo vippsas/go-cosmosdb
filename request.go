@@ -9,6 +9,7 @@ import (
 )
 
 const (
+	// Request headers
 	HEADER_XDATE             = "X-Ms-Date"
 	HEADER_AUTH              = "Authorization"
 	HEADER_VER               = "X-Ms-Version"
@@ -16,12 +17,10 @@ const (
 	HEADER_CONLEN            = "Content-Length"
 	HEADER_IS_QUERY          = "x-ms-documentdb-isquery"
 	HEADER_UPSERT            = "x-Ms-Documentdb-Is-Upsert"
-	HEADER_CONTINUATION      = "X-Ms-Continuation"
 	HEADER_IF_MATCH          = "If-Match"
 	HEADER_IF_NONE_MATCH     = "If-None-Match"
 	HEADER_CHARGE            = "X-Ms-Request-Charge"
 	HEADER_CONSISTENCY_LEVEL = "x-ms-consistency-level"
-	HEADER_SESSION_TOKEN     = "x-ms-session-token"
 	HEADER_OFFER_THROUGHPUT  = "x-ms-offer-throughput"
 	HEADER_OFFER_TYPE        = "x-ms-offer-type"
 
@@ -32,6 +31,13 @@ const (
 	HEADER_TRIGGER_PRE_EXCLUDE  = "x-ms-documentdb-pre-trigger-exclude"
 	HEADER_TRIGGER_POST_INCLUDE = "x-ms-documentdb-post-trigger-include"
 	HEADER_TRIGGER_POST_EXCLUDE = "x-ms-documentdb-post-trigger-exclude"
+
+	// Both request and response
+	HEADER_SESSION_TOKEN = "x-ms-session-token"
+	HEADER_CONTINUATION  = "x-ms-continuation"
+
+	// Response headers
+	HEADER_REQUEST_CHARGE = "x-ms-request-charge"
 )
 
 type RequestOptions map[RequestOption]string

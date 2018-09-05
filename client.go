@@ -62,26 +62,24 @@ func (c *Client) get(ctx context.Context, link string, ret interface{}, headers 
 	return err
 }
 
-func (c *Client) create(ctx context.Context, link string, body, ret interface{}, headers map[string]string) error {
+func (c *Client) create(ctx context.Context, link string, body, ret interface{}, headers map[string]string) (*http.Response, error) {
 	data, err := stringify(body)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	buf := bytes.NewBuffer(data)
 
-	_, err = c.method(ctx, "POST", link, ret, buf, headers)
-	return err
+	return c.method(ctx, "POST", link, ret, buf, headers)
 }
 
-func (c *Client) replace(ctx context.Context, link string, body, ret interface{}, headers map[string]string) error {
+func (c *Client) replace(ctx context.Context, link string, body, ret interface{}, headers map[string]string) (*http.Response, error) {
 	data, err := stringify(body)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	buf := bytes.NewBuffer(data)
 
-	_, err = c.method(ctx, "PUT", link, ret, buf, headers)
-	return err
+	return c.method(ctx, "PUT", link, ret, buf, headers)
 }
 
 func (c *Client) delete(ctx context.Context, link string, headers map[string]string) error {
@@ -89,7 +87,7 @@ func (c *Client) delete(ctx context.Context, link string, headers map[string]str
 	return err
 }
 
-func (c *Client) query(ctx context.Context, link string, body, ret interface{}, headers map[string]string) error {
+func (c *Client) query(ctx context.Context, link string, body, ret interface{}, headers map[string]string) (*http.Response, error) {
 	return c.create(ctx, link, body, ret, headers)
 }
 

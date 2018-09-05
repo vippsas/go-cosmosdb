@@ -23,7 +23,7 @@ func createDatabaseLink(dbName string) string {
 func (c *Client) CreateDatabase(ctx context.Context, dbName string, ops *RequestOptions) (*Database, error) {
 	db := &Database{}
 
-	err := c.create(ctx, createDatabaseLink(""), CreateDatabaseOptions{dbName}, db, nil)
+	_, err := c.create(ctx, createDatabaseLink(""), CreateDatabaseOptions{dbName}, db, nil)
 	if err != nil {
 		return nil, err
 	}

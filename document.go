@@ -3,6 +3,7 @@ package cosmosdb
 import (
 	"context"
 	"fmt"
+	"net/http"
 	"strconv"
 	"strings"
 )
@@ -34,6 +35,17 @@ type CreateDocumentOptions struct {
 	PostTriggersInclude []string
 }
 
+type DocumentResponse struct {
+	RUs          int
+	SessionToken string
+}
+
+func parseDocumentResponse(resp *http.Response) (parsed DocumentResponse) {
+	parsed.SessionToken = resp.Header.Get(HEADER_SESSION_TOKEN)
+	parsed.RUs, _ = strconv.Atoi(resp.Header.Get(HEADER_REQUEST_CHARGE))
+	return
+}
+
 func (ops CreateDocumentOptions) AsHeaders() (map[string]string, error) {
 	headers := map[string]string{}
 
@@ -59,27 +71,24 @@ func (ops CreateDocumentOptions) AsHeaders() (map[string]string, error) {
 }
 
 func (c *Client) CreateDocument(ctx context.Context, dbName, colName string,
-	doc interface{}, ops *CreateDocumentOptions) (*Resource, error) {
+	doc interface{}, ops CreateDocumentOptions) (*Resource, DocumentResponse, error) {
 
 	// add optional headers (after)
 	headers := map[string]string{}
 	var err error
-	if ops != nil {
-		headers, err = ops.AsHeaders()
-		if err != nil {
-			return nil, err
-		}
+	headers, err = ops.AsHeaders()
+	if err != nil {
+		return nil, DocumentResponse{}, err
 	}
 
 	resource := &Resource{}
 	link := createDocsLink(dbName, colName)
 
-	err = c.create(ctx, link, doc, resource, headers)
+	response, err := c.create(ctx, link, doc, resource, headers)
 	if err != nil {
-		return nil, err
+		return nil, DocumentResponse{}, err
 	}
-
-	return resource, nil
+	return resource, parseDocumentResponse(response), nil
 }
 
 type UpsertDocumentOptions struct {
@@ -129,7 +138,7 @@ func (ops GetDocumentOptions) AsHeaders() (map[string]string, error) {
 }
 
 func (c *Client) GetDocument(ctx context.Context, dbName, colName, id string,
-	ops *GetDocumentOptions, out interface{}) error {
+	ops GetDocumentOptions, out interface{}) error {
 
 	headers, err := ops.AsHeaders()
 	if err != nil {
@@ -182,26 +191,24 @@ func (ops ReplaceDocumentOptions) AsHeaders() (map[string]string, error) {
 
 // ReplaceDocument replaces a whole document.
 func (c *Client) ReplaceDocument(ctx context.Context, dbName, colName, id string,
-	doc interface{}, ops *ReplaceDocumentOptions) (*Resource, error) {
+	doc interface{}, ops ReplaceDocumentOptions) (*Resource, DocumentResponse, error) {
 
 	headers := map[string]string{}
 	var err error
-	if ops != nil {
-		headers, err = ops.AsHeaders()
-		if err != nil {
-			return nil, err
-		}
+	headers, err = ops.AsHeaders()
+	if err != nil {
+		return nil, DocumentResponse{}, err
 	}
 
 	link := createDocLink(dbName, colName, id)
 	resource := &Resource{}
 
-	err = c.replace(ctx, link, doc, resource, headers)
+	response, err := c.replace(ctx, link, doc, resource, headers)
 	if err != nil {
-		return nil, err
+		return nil, DocumentResponse{}, err
 	}
 
-	return resource, nil
+	return resource, parseDocumentResponse(response), nil
 }
 
 // DeleteDocumentOptions contains all options that can be used for deleting
@@ -232,7 +239,7 @@ func (ops DeleteDocumentOptions) AsHeaders() (map[string]string, error) {
 	return headers, nil
 }
 
-func (c *Client) DeleteDocument(ctx context.Context, dbName, colName, id string, ops *DeleteDocumentOptions) error {
+func (c *Client) DeleteDocument(ctx context.Context, dbName, colName, id string, ops DeleteDocumentOptions) error {
 	headers, err := ops.AsHeaders()
 	if err != nil {
 		return err
@@ -297,11 +304,11 @@ func (ops QueryDocumentsOptions) AsHeaders() (map[string]string, error) {
 // QueryDocuments queries a collection in cosmosdb with the provided query.
 // To correctly parse the returned results you currently have to pass in
 // a slice for the returned documents, not a single document.
-func (c *Client) QueryDocuments(ctx context.Context, dbName, collName string, qry Query, docs interface{}, ops *QueryDocumentsOptions) (*QueryDocumentsResponse, error) {
+func (c *Client) QueryDocuments(ctx context.Context, dbName, collName string, qry Query, docs interface{}, ops QueryDocumentsOptions) (QueryDocumentsResponse, error) {
 
 	headers, err := ops.AsHeaders()
 	if err != nil {
-		return nil, err
+		return QueryDocumentsResponse{}, err
 	}
 
 	link := createDocsLink(dbName, collName)
@@ -310,10 +317,12 @@ func (c *Client) QueryDocuments(ctx context.Context, dbName, collName string, qr
 		Documents: docs,
 	}
 
-	err = c.query(ctx, link, qry, &results, headers)
+	response, err := c.query(ctx, link, qry, &results, headers)
 	if err != nil {
-		return nil, err
+		return QueryDocumentsResponse{}, err
 	}
+	results.RUs, _ = strconv.Atoi(response.Header.Get(HEADER_REQUEST_CHARGE))
+	results.Continuation = response.Header.Get(HEADER_CONTINUATION)
 
-	return &results, nil
+	return results, nil
 }
