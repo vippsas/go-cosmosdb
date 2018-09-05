@@ -6,12 +6,14 @@ import (
 	"github.com/alecthomas/repr"
 	"github.com/vippsas/go-cosmosdb/cosmos"
 	"github.com/vippsas/go-cosmosdb/cosmostest"
+	"log"
+	"os"
 )
 
 type MyModel struct {
 	cosmos.BaseModel
 
-	Model  string `json:"model" cosmosmodel:"MyModel-v1"`
+	Model  string `json:"model" cosmosmodel:"MyModel/1"`
 	UserId string `json:"userId"`
 	X      int    `json:"x"`
 }
@@ -27,7 +29,7 @@ func (e *MyModel) PostGet(txn *cosmos.Transaction) error {
 type MyModelV2 struct {
 	cosmos.BaseModel
 
-	Model     string `json:"model" cosmosmodel:"MyModel-v2"`
+	Model     string `json:"model" cosmosmodel:"MyModel/2"`
 	UserId    string `json:"userId"`
 	X         int    `json:"x"`
 	TwoTimesX int    `json:"xTimes2"`
@@ -44,7 +46,7 @@ func (e *MyModelV2) PostGet(txn *cosmos.Transaction) error {
 func MyModelToMyModelV2(mi1, mi2 interface{}) error {
 	m1 := mi1.(MyModel)
 	m2 := mi2.(*MyModelV2)
-	repr.Println("convesion", m1, m2)
+	repr.Println("conversion", m1, m2)
 
 	return nil
 }
@@ -70,7 +72,7 @@ func requireNil(err error) {
 
 func main() {
 
-	c := cosmostest.Setup("mycollection", "userId")
+	c := cosmostest.Setup(log.New(os.Stderr, "", log.LstdFlags), "mycollection", "userId")
 	defer cosmostest.Teardown(c)
 
 	var entity MyModel
