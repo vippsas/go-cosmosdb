@@ -1,4 +1,4 @@
-package cosmosapi
+package cosmosdb
 
 type Resource struct {
 	Id   string `json:"id,omitempty"`

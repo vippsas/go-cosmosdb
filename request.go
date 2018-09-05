@@ -1,4 +1,4 @@
-package cosmosapi
+package cosmosdb
 
 import (
 	"encoding/json"
