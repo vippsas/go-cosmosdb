@@ -179,3 +179,10 @@ func (c Collection) Query(query string, entities interface{}) error {
 	_, err := c.Client.QueryDocuments(c.Context, c.DbName, c.Name, cosmosapi.Query{Query: query}, entities, cosmosapi.DefaultQueryDocumentOptions())
 	return err
 }
+
+// Execute a StoredProcedure on the collection
+func (c Collection) ExecuteSproc(sprocName string,  partitionKeyValue string, ret interface{}, args... interface{}) error {
+	opts := cosmosapi.ExecuteStoredProcedureOptions{PartitionKeyValue: partitionKeyValue}
+	return c.Client.ExecuteStoredProcedure(
+		c.GetContext(), c.DbName, c.Name, sprocName, opts, ret, args...)
+}

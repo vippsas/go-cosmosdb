@@ -62,6 +62,10 @@ func (mock *mockCosmos) DeleteDatabase(ctx context.Context, dbName string, ops *
 	panic("implement me")
 }
 
+func (mock *mockCosmos) ExecuteStoredProcedure(ctx context.Context, dbName, colName, sprocName string, ops cosmosapi.ExecuteStoredProcedureOptions, ret interface{}, args ...interface{}) error {
+	panic("implement me")
+}
+
 func (mock *mockCosmos) reset() {
 	*mock = mockCosmos{}
 }
@@ -124,6 +128,10 @@ type mockCosmosNotFound struct {
 }
 
 func (mockCosmosNotFound) QueryDocuments(ctx context.Context, dbName, collName string, qry cosmosapi.Query, docs interface{}, ops cosmosapi.QueryDocumentsOptions) (cosmosapi.QueryDocumentsResponse, error) {
+	panic("implement me")
+}
+
+func (mockCosmosNotFound) ExecuteStoredProcedure(ctx context.Context, dbName, colName, sprocName string, ops cosmosapi.ExecuteStoredProcedureOptions, ret interface{}, args ...interface{}) error {
 	panic("implement me")
 }
 

@@ -21,6 +21,14 @@ func createDocLink(dbName, collName, doc string) string {
 	return "dbs/" + dbName + "/colls/" + collName + "/docs/" + doc
 }
 
+func createSprocsLink(dbName, collName string) string {
+	return "dbs/" + dbName + "/colls/" + collName  + "/sprocs"
+}
+
+func createSprocLink(dbName, collName, sprocName string) string {
+	return "dbs/" + dbName + "/colls/" + collName + "/sprocs/" + sprocName
+}
+
 // resourceTypeFromLink is used to extract the resource type link to use in the
 // payload of the authorization header.
 func resourceTypeFromLink(link string) (rLink, rType string) {
