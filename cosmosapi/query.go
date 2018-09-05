@@ -1,4 +1,4 @@
-package cosmosdb
+package cosmosapi
 
 type Query struct {
 	Query  string       `json:"query"`
