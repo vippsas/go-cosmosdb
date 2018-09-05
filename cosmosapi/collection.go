@@ -147,7 +147,7 @@ func (c *Client) GetCollection(ctx context.Context, dbName, colName string) (*Co
 }
 
 func (c *Client) DeleteCollection(ctx context.Context, dbName, colName string) error {
-	return ErrorNotImplemented
+	return c.delete(ctx, CreateCollLink(dbName, colName), nil)
 }
 
 // https://docs.microsoft.com/en-us/rest/api/cosmos-db/replace-a-collection

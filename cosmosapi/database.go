@@ -56,5 +56,5 @@ func (c *Client) GetDatabase(ctx context.Context, dbName string, ops *RequestOpt
 }
 
 func (c *Client) DeleteDatabase(ctx context.Context, dbName string, ops *RequestOptions) error {
-	return ErrorNotImplemented
+	return c.delete(ctx, createDatabaseLink(dbName), nil)
 }
