@@ -1,5 +1,8 @@
 example:
-	go build -o ./dist/bin/examples ./examples/main.go
+	go build -o ./dist/bin/cosmosapi-examples ./examples/cosmosapi/main.go
+	go build -o ./dist/bin/cosmos-examples ./examples/cosmos/main.go
 
 test:
-	go test -v `go list ./`
+	go test -v `go list ./cosmosapi`
+	go test -v `go list ./cosmos`
+	go test -v `go list ./cosmostest`
