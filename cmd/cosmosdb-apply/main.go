@@ -5,13 +5,12 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
+	"github.com/vippsas/go-cosmosdb/cosmosapi"
 	"io/ioutil"
+	"log"
 	"os"
 	"path/filepath"
 	"strings"
-
-	"github.com/vippsas/go-cosmosdb"
-	"log"
 )
 
 const (
@@ -104,18 +103,18 @@ func getPaths(filePaths string) []string {
 	return paths
 }
 
-func newCosmosDbClient(masterKey string) *cosmosdb.Client {
+func newCosmosDbClient(masterKey string) *cosmosapi.Client {
 	// Create CosmosDB client
-	cosmosCfg := cosmosdb.Config{
+	cosmosCfg := cosmosapi.Config{
 		MasterKey: masterKey,
 	}
-	client := cosmosdb.New(fmt.Sprintf("https://%s.documents.azure.com:443", options.instanceName), cosmosCfg, nil)
+	client := cosmosapi.New(fmt.Sprintf("https://%s.documents.azure.com:443", options.instanceName), cosmosCfg, nil)
 	return client
 }
 
 // --- Database related
 
-func ensureDatabaseExists(client *cosmosdb.Client, def collectionDefinition) {
+func ensureDatabaseExists(client *cosmosapi.Client, def collectionDefinition) {
 	_, err := client.GetDatabase(context.Background(), def.DatabaseID, nil)
 	if err != nil {
 		log.Printf("Could not get database. Assuming database does not exist.\n")
@@ -162,7 +161,7 @@ func getCollectionDefinitions(filePaths []string) []collectionDefinition {
 	return colDefs
 }
 
-func handleCollectionDefinition(def collectionDefinition, client *cosmosdb.Client) {
+func handleCollectionDefinition(def collectionDefinition, client *cosmosapi.Client) {
 	// We need to check three cases.
 	// 1: Added. In definition and not among existing collections.
 	// 2: Updated. In both places, but need to be replaced.
@@ -202,7 +201,7 @@ func handleCollectionDefinition(def collectionDefinition, client *cosmosdb.Clien
 	// TODO: Do the same for SPROC as for trigger
 }
 
-func getCollection(client *cosmosdb.Client, def collectionDefinition) (*cosmosdb.Collection, bool) {
+func getCollection(client *cosmosapi.Client, def collectionDefinition) (*cosmosapi.Collection, bool) {
 	dbName := def.DatabaseID
 	colName := def.CollectionID
 
@@ -216,13 +215,13 @@ func getCollection(client *cosmosdb.Client, def collectionDefinition) (*cosmosdb
 	return dbCollection, true
 }
 
-func createCollection(def collectionDefinition, client *cosmosdb.Client) {
-	colCreateOpts := cosmosdb.CollectionCreateOptions{
+func createCollection(def collectionDefinition, client *cosmosapi.Client) {
+	colCreateOpts := cosmosapi.CollectionCreateOptions{
 		Id:              def.CollectionID,
 		IndexingPolicy:  &def.IndexingPolicy,
 		PartitionKey:    &def.PartitionKey,
-		OfferType:       cosmosdb.OfferType(def.Offer.Type),
-		OfferThroughput: cosmosdb.OfferThroughput(def.Offer.Throughput),
+		OfferType:       cosmosapi.OfferType(def.Offer.Type),
+		OfferThroughput: cosmosapi.OfferThroughput(def.Offer.Throughput),
 	}
 
 	_, err := client.CreateCollection(context.Background(), def.DatabaseID, colCreateOpts)
@@ -233,8 +232,8 @@ func createCollection(def collectionDefinition, client *cosmosdb.Client) {
 	log.Printf("Collection created\n")
 }
 
-func replaceCollection(def collectionDefinition, existingCol *cosmosdb.Collection, client *cosmosdb.Client) {
-	colReplaceOpts := cosmosdb.CollectionReplaceOptions{
+func replaceCollection(def collectionDefinition, existingCol *cosmosapi.Collection, client *cosmosapi.Client) {
+	colReplaceOpts := cosmosapi.CollectionReplaceOptions{
 		Id:             def.CollectionID,
 		IndexingPolicy: &def.IndexingPolicy,
 		PartitionKey:   existingCol.PartitionKey,
@@ -250,7 +249,7 @@ func replaceCollection(def collectionDefinition, existingCol *cosmosdb.Collectio
 
 // --- Triggers related
 
-func triggerExists(triggers []cosmosdb.Trigger, triggerName string) (*cosmosdb.Trigger, bool) {
+func triggerExists(triggers []cosmosapi.Trigger, triggerName string) (*cosmosapi.Trigger, bool) {
 	for _, c := range triggers {
 		if c.Id == triggerName {
 			return &c, true
@@ -260,11 +259,11 @@ func triggerExists(triggers []cosmosdb.Trigger, triggerName string) (*cosmosdb.T
 	return nil, false
 }
 
-func replaceTrigger(trigDef trigger, client *cosmosdb.Client, def collectionDefinition) {
-	opts := cosmosdb.TriggerReplaceOptions{
+func replaceTrigger(trigDef trigger, client *cosmosapi.Client, def collectionDefinition) {
+	opts := cosmosapi.TriggerReplaceOptions{
 		Id:        trigDef.ID,
-		Type:      cosmosdb.TriggerType(trigDef.TriggerType),
-		Operation: cosmosdb.TriggerOperation(trigDef.TriggerOperation),
+		Type:      cosmosapi.TriggerType(trigDef.TriggerType),
+		Operation: cosmosapi.TriggerOperation(trigDef.TriggerOperation),
 		Body:      getJavaScriptBody(trigDef.Body, def.FilePath),
 	}
 
@@ -277,11 +276,11 @@ func replaceTrigger(trigDef trigger, client *cosmosdb.Client, def collectionDefi
 	log.Printf("Trigger '%s' was updated\n", trigDef.ID)
 }
 
-func createTrigger(trigDef trigger, client *cosmosdb.Client, def collectionDefinition) {
-	opts := cosmosdb.TriggerCreateOptions{
+func createTrigger(trigDef trigger, client *cosmosapi.Client, def collectionDefinition) {
+	opts := cosmosapi.TriggerCreateOptions{
 		Id:        trigDef.ID,
-		Type:      cosmosdb.TriggerType(trigDef.TriggerType),
-		Operation: cosmosdb.TriggerOperation(trigDef.TriggerOperation),
+		Type:      cosmosapi.TriggerType(trigDef.TriggerType),
+		Operation: cosmosapi.TriggerOperation(trigDef.TriggerOperation),
 		Body:      getJavaScriptBody(trigDef.Body, def.FilePath),
 	}
 
@@ -320,7 +319,7 @@ func getJavaScriptBody(body triggerBody, directory string) string {
 
 // --- Offers related
 
-func replaceOffers(def collectionDefinition, dbCol *cosmosdb.Collection, client *cosmosdb.Client) {
+func replaceOffers(def collectionDefinition, dbCol *cosmosapi.Collection, client *cosmosapi.Client) {
 	dbOffers, err := client.ListOffers(context.Background(), nil)
 	if err != nil {
 		panicef("Could not list offers in DB", err)
@@ -329,15 +328,15 @@ func replaceOffers(def collectionDefinition, dbCol *cosmosdb.Collection, client 
 		if off.OfferResourceId == dbCol.Rid {
 			// offer applies to this resource
 
-			offReplOpts := cosmosdb.OfferReplaceOptions{
+			offReplOpts := cosmosapi.OfferReplaceOptions{
 				Rid:              off.Rid,
 				OfferResourceId:  off.OfferResourceId,
 				Id:               off.Id,
 				OfferVersion:     off.OfferVersion,
 				ResourceSelfLink: off.Self,
-				OfferType:        cosmosdb.OfferType(def.Offer.Type),
-				Content: cosmosdb.OfferThroughputContent{
-					Throughput: cosmosdb.OfferThroughput(def.Offer.Throughput),
+				OfferType:        cosmosapi.OfferType(def.Offer.Type),
+				Content: cosmosapi.OfferThroughputContent{
+					Throughput: cosmosapi.OfferThroughput(def.Offer.Throughput),
 				},
 			}
 			_, err := client.ReplaceOffer(context.Background(), offReplOpts, nil)
@@ -360,11 +359,11 @@ type collectionDefinition struct {
 		Throughput int    `json:"throughput"`
 		Type       string `json:"type"`
 	} `json:"offer"`
-	IndexingPolicy cosmosdb.IndexingPolicy `json:"indexingPolicy"`
-	PartitionKey   cosmosdb.PartitionKey   `json:"partitionKey"`
-	Triggers       []trigger               `json:"triggers"`
-	Udfs           []interface{}           `json:"udfs"`
-	Sprocs         []interface{}           `json:"sprocs"`
+	IndexingPolicy cosmosapi.IndexingPolicy `json:"indexingPolicy"`
+	PartitionKey   cosmosapi.PartitionKey   `json:"partitionKey"`
+	Triggers       []trigger                `json:"triggers"`
+	Udfs           []interface{}            `json:"udfs"`
+	Sprocs         []interface{}            `json:"sprocs"`
 }
 
 type trigger struct {

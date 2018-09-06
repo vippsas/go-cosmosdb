@@ -2,7 +2,7 @@ package main
 
 import (
 	"fmt"
-	"github.com/vippsas/go-cosmosdb"
+	"github.com/vippsas/go-cosmosdb/cosmosapi"
 	"io/ioutil"
 	"os"
 )
@@ -15,7 +15,7 @@ func main() {
 		panic(err)
 	}
 
-	sourceCode := cosmosdb.EscapeJavaScript(bytes)
+	sourceCode := cosmosapi.EscapeJavaScript(bytes)
 
 	fmt.Fprintf(os.Stdout, sourceCode)
 }
