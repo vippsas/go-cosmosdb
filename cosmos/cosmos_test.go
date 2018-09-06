@@ -7,7 +7,6 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/require"
 	"github.com/vippsas/go-cosmosdb/cosmosapi"
-	"vipps.no/vaam/utils/testutils"
 )
 
 //
@@ -155,7 +154,7 @@ func TestCollectionStaleGet(t *testing.T) {
 
 	// StaleGet: target zeroed, returns nil
 	err = c.StaleGet("foo", "foo", &target)
-	testutils.RequireNilErr(t, err)
+	require.NoError(t, err)
 	require.Equal(t, 0, target.X)
 	require.Equal(t, "", target.Etag)
 }
