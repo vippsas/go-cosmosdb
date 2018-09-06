@@ -72,9 +72,9 @@ func loadGlobalConfig() {
 // Factory for constructing the underlying, proper cosmosapi.Client given configuration.
 // This is typically called by / wrapped by the test collection providers.
 func RawClient(cfg Config) *cosmosapi.Client {
-	var caRoots *x509.CertPool = nil
+	var caRoots *x509.CertPool
 	if cfg.TlsCertificate != "" {
-		caRoots := x509.NewCertPool()
+		caRoots = x509.NewCertPool()
 		if !caRoots.AppendCertsFromPEM([]byte(cfg.TlsCertificate)) {
 			panic("Failed to parse TLS certificate")
 		}

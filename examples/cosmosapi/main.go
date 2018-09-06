@@ -6,7 +6,7 @@ import (
 
 	"github.com/kelseyhightower/envconfig"
 	"github.com/pkg/errors"
-	"github.com/vippsas/go-cosmosdb"
+	"github.com/vippsas/go-cosmosdb/cosmosapi"
 )
 
 type config struct {
@@ -32,7 +32,7 @@ type ExampleDoc struct {
 }
 
 type ExampleGetDoc struct {
-	cosmosdb.Document
+	cosmosapi.Document
 	Id                    string `json:"id"`
 	RecipientPartitionKey string
 }
@@ -41,11 +41,11 @@ func main() {
 	fmt.Printf("Starting with examples...\n")
 
 	cfg := fromEnv()
-	cosmosCfg := cosmosdb.Config{
+	cosmosCfg := cosmosapi.Config{
 		MasterKey: cfg.DbKey,
 	}
 
-	client := cosmosdb.New(cfg.DbUrl, cosmosCfg, nil)
+	client := cosmosapi.New(cfg.DbUrl, cosmosCfg, nil)
 
 	// Get a database
 	db, err := client.GetDatabase(context.Background(), cfg.DbName, nil)
@@ -58,8 +58,8 @@ func main() {
 
 	// Create a document without partition key
 	doc := ExampleDoc{Id: "aaa", Value: "666"}
-	ops := cosmosdb.CreateDocumentOptions{}
-	resource, err := client.CreateDocument(context.Background(), cfg.DbName, "batchstatuses", doc, nil)
+	ops := cosmosapi.CreateDocumentOptions{}
+	resource, _, err := client.CreateDocument(context.Background(), cfg.DbName, "batchstatuses", doc, ops)
 	if err != nil {
 		err = errors.WithStack(err)
 		fmt.Println(err)
@@ -69,11 +69,11 @@ func main() {
 	// Create a document with partition key
 	fmt.Printf("\n CreateDocument with partition key.\n")
 	doc = ExampleDoc{Id: "aaa", Value: "666", RecipientPartitionKey: "asdf"}
-	ops = cosmosdb.CreateDocumentOptions{
+	ops = cosmosapi.CreateDocumentOptions{
 		PartitionKeyValue: "asdf",
 		IsUpsert:          true,
 	}
-	resource, err = client.CreateDocument(context.Background(), cfg.DbName, "invoices", doc, &ops)
+	resource, _, err = client.CreateDocument(context.Background(), cfg.DbName, "invoices", doc, ops)
 	if err != nil {
 		err = errors.WithStack(err)
 		fmt.Println(err)
@@ -82,7 +82,7 @@ func main() {
 
 	// Create a document with partition key
 	fmt.Printf("\n CreateDocument with partition key.\n")
-	resource, err = client.CreateDocument(context.Background(), cfg.DbName, "invoices", doc, &ops)
+	resource, _, err = client.CreateDocument(context.Background(), cfg.DbName, "invoices", doc, ops)
 	if err != nil {
 		err = errors.WithStack(err)
 		fmt.Println(err)
@@ -92,10 +92,10 @@ func main() {
 	// Get a document with partitionkey
 	fmt.Printf("\nGet document with partition key.\n")
 	doc = ExampleDoc{Id: "aaa"}
-	ro := cosmosdb.GetDocumentOptions{
+	ro := cosmosapi.GetDocumentOptions{
 		PartitionKeyValue: "asdf",
 	}
-	err = client.GetDocument(context.Background(), cfg.DbName, "invoices", "aaa", &ro, &doc)
+	err = client.GetDocument(context.Background(), cfg.DbName, "invoices", "aaa", ro, &doc)
 	if err != nil {
 		err = errors.WithStack(err)
 		fmt.Println(err)
@@ -106,10 +106,10 @@ func main() {
 	// Replace a document with partitionkey
 	fmt.Printf("\nReplace document with partition key.\n")
 	doc = ExampleDoc{Id: "aaa", Value: "new value", RecipientPartitionKey: "asdf"}
-	replaceOps := cosmosdb.ReplaceDocumentOptions{
+	replaceOps := cosmosapi.ReplaceDocumentOptions{
 		PartitionKeyValue: "asdf",
 	}
-	response, err := client.ReplaceDocument(context.Background(), cfg.DbName, "invoices", "aaa", &doc, &replaceOps)
+	response, _, err := client.ReplaceDocument(context.Background(), cfg.DbName, "invoices", "aaa", &doc, replaceOps)
 	if err != nil {
 		err = errors.WithStack(err)
 		fmt.Println(err)
@@ -121,7 +121,7 @@ func main() {
 	doc = ExampleDoc{Id: "aaa", Value: "yet another new value", RecipientPartitionKey: "asdf"}
 	replaceOps.IfMatch = response.Etag
 
-	response, err = client.ReplaceDocument(context.Background(), cfg.DbName, "invoices", "aaa", &doc, &replaceOps)
+	response, _, err = client.ReplaceDocument(context.Background(), cfg.DbName, "invoices", "aaa", &doc, replaceOps)
 	if err != nil {
 		err = errors.WithStack(err)
 		fmt.Println(err)
@@ -131,10 +131,10 @@ func main() {
 	// Get a document with partitionkey
 	fmt.Printf("\nGet document with partition key.\n")
 	doc = ExampleDoc{Id: "aaa"}
-	ro = cosmosdb.GetDocumentOptions{
+	ro = cosmosapi.GetDocumentOptions{
 		PartitionKeyValue: "asdf",
 	}
-	err = client.GetDocument(context.Background(), cfg.DbName, "invoices", "aaa", &ro, &doc)
+	err = client.GetDocument(context.Background(), cfg.DbName, "invoices", "aaa", ro, &doc)
 	if err != nil {
 		err = errors.WithStack(err)
 		fmt.Println(err)
@@ -144,12 +144,12 @@ func main() {
 
 	// Query Documents
 	fmt.Println("Query Documents")
-	qops := cosmosdb.DefaultQueryDocumentOptions()
+	qops := cosmosapi.DefaultQueryDocumentOptions()
 	qops.PartitionKeyValue = "asdf"
 
-	qry := cosmosdb.Query{
+	qry := cosmosapi.Query{
 		Query: "SELECT * FROM c WHERE c.id = @id",
-		Params: []cosmosdb.QueryParam{
+		Params: []cosmosapi.QueryParam{
 			{
 				Name:  "@id",
 				Value: "aaa",
@@ -159,7 +159,7 @@ func main() {
 
 	var docs []ExampleDoc
 	fmt.Printf("docs: %+v\n", docs)
-	res, err := client.QueryDocuments(context.Background(), cfg.DbName, "invoices", qry, &docs, &qops)
+	res, err := client.QueryDocuments(context.Background(), cfg.DbName, "invoices", qry, &docs, qops)
 	if err != nil {
 		err = errors.WithStack(err)
 		fmt.Println(err)
@@ -172,10 +172,10 @@ func main() {
 
 	// Delete a document with partition key
 	fmt.Printf("\nDelete document with partition key.\n")
-	do := cosmosdb.DeleteDocumentOptions{
+	do := cosmosapi.DeleteDocumentOptions{
 		PartitionKeyValue: "asdf",
 	}
-	err = client.DeleteDocument(context.Background(), cfg.DbName, "invoices", "aaa", &do)
+	err = client.DeleteDocument(context.Background(), cfg.DbName, "invoices", "aaa", do)
 	if err != nil {
 		err = errors.WithStack(err)
 		fmt.Println(err)
