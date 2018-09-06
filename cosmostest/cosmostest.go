@@ -21,6 +21,7 @@ import (
 	"net/http"
 	"os"
 
+	"crypto/x509"
 	"github.com/pkg/errors"
 	uuid "github.com/satori/go.uuid"
 	"github.com/vippsas/go-cosmosdb/cosmos"
@@ -32,6 +33,8 @@ type Config struct {
 	Uri                     string `yaml:"Uri"`
 	MasterKey               string `yaml:"MasterKey"`
 	MultiTenant             bool   `yaml:"MultiTenant"`
+	TlsCertificate          string `yaml:"TlsCertificate"`
+	TlsServerName           string `yaml:"TlsServerName"`
 	TlsInsecureSkipVerify   bool   `yaml:"TlsInsecureSkipVerify"`
 	DbName                  string `yaml:"DbName"`
 	CollectionIdPrefix      string `yaml:"CollectionIdPrefix"`
@@ -69,9 +72,19 @@ func loadGlobalConfig() {
 // Factory for constructing the underlying, proper cosmosapi.Client given configuration.
 // This is typically called by / wrapped by the test collection providers.
 func RawClient(cfg Config) *cosmosapi.Client {
+	var caRoots *x509.CertPool
+	if cfg.TlsCertificate != "" {
+		caRoots = x509.NewCertPool()
+		if !caRoots.AppendCertsFromPEM([]byte(cfg.TlsCertificate)) {
+			panic("Failed to parse TLS certificate")
+		}
+
+	}
 	httpClient := &http.Client{
 		Transport: &http.Transport{
 			TLSClientConfig: &tls.Config{
+				RootCAs:            caRoots,
+				ServerName:         cfg.TlsServerName,
 				InsecureSkipVerify: cfg.TlsInsecureSkipVerify,
 			},
 		},
