@@ -6,19 +6,13 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
-	"log"
 	"net/http"
 	"strings"
 	"time"
 
 	"github.com/pkg/errors"
+	"github.com/vippsas/go-cosmosdb/logging"
 )
-
-func init() {
-	// Using standard log lib to avoid external dependencies for now.
-	// TODO: Consider if debug is neccesary
-	log.SetOutput(ioutil.Discard)
-}
 
 var (
 	// TODO: useful?
@@ -39,11 +33,14 @@ type Client struct {
 	Url    string
 	Config Config
 	Client *http.Client
+	Log    logging.ExtendedLogger
 }
 
 // New makes a new client to communicate to a cosmosdb instance.
 // If no http.Client is provided it defaults to the http.DefaultClient
-func New(url string, cfg Config, cl *http.Client) *Client {
+// The log argument can either be an StdLogger (log.Logger), an ExtendedLogger (like logrus.Logger)
+// or nil (logging disabled)
+func New(url string, cfg Config, cl *http.Client, log logging.StdLogger) *Client {
 	client := &Client{
 		Url:    strings.Trim(url, "/"),
 		Config: cfg,
@@ -53,6 +50,8 @@ func New(url string, cfg Config, cl *http.Client) *Client {
 	if client.Client == nil {
 		client.Client = http.DefaultClient
 	}
+
+	client.Log = logging.Adapt(log)
 
 	return client
 }
@@ -94,15 +93,15 @@ func (c *Client) query(ctx context.Context, link string, body, ret interface{}, 
 func (c *Client) method(ctx context.Context, method, link string, ret interface{}, body io.Reader, headers map[string]string) (*http.Response, error) {
 	req, err := http.NewRequest(method, path(c.Url, link), body)
 	if err != nil {
-		log.Println(err)
+		c.Log.Errorln(err)
 		return nil, err
 	}
-	log.Printf("Will call: %s\n", req.URL)
+	c.Log.Debug("Will call: %s\n", req.URL)
 	//r := ResourceRequest(link, req)
 
 	defaultHeaders, err := defaultHeaders(method, link, c.Config.MasterKey)
 	if err != nil {
-		log.Println(err)
+		c.Log.Debug(err)
 		return nil, err
 	}
 
@@ -118,7 +117,7 @@ func (c *Client) method(ctx context.Context, method, link string, ret interface{
 		req.Header.Add(k, v)
 	}
 
-	log.Printf("Headers: %s\n", req.Header)
+	c.Log.Debug("Headers: %s\n", req.Header)
 
 	return c.do(ctx, req, ret)
 }
@@ -180,7 +179,7 @@ func (c *Client) do(ctx context.Context, r *http.Request, data interface{}) (*ht
 	retryCount := 0
 	for {
 		r.Body = ioutil.NopCloser(bytes.NewReader(b))
-		log.Printf("Executing request\n")
+		c.Log.Debug("Executing request")
 		resp, err := cli.Do(r)
 		if err != nil {
 			return nil, err
@@ -197,6 +196,10 @@ func (c *Client) do(ctx context.Context, r *http.Request, data interface{}) (*ht
 		defer resp.Body.Close()
 
 		if err != nil {
+			b, err2 := ioutil.ReadAll(resp.Body)
+			if err2 == nil {
+				c.Log.Errorln("Error response from Cosmos DB: " + string(b))
+			}
 			return resp, err
 		}
 
