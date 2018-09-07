@@ -168,10 +168,8 @@ func (c *Client) do(ctx context.Context, r *http.Request, data interface{}) (*ht
 	}
 
 	var resp *http.Response
-	var err error
 	for retryCount := 0; retryCount <= c.Config.MaxRetries; retryCount++ {
-		resp = nil
-		err = nil
+		var err error
 		if retryCount > 0 {
 			delay := backoffDelay(retryCount)
 			t := time.NewTimer(delay)
@@ -190,14 +188,12 @@ func (c *Client) do(ctx context.Context, r *http.Request, data interface{}) (*ht
 			return nil, err
 		}
 		err = c.handleResponse(ctx, r, resp, data)
-		if err != errRetry {
-			break
+		if err == errRetry {
+			continue
 		}
+		return resp, err
 	}
-	if err == errRetry {
-		err = errUnexpectedHTTPStatus
-	}
-	return resp, err
+	return resp, ErrMaxRetriesExceeded
 }
 
 
