@@ -96,7 +96,7 @@ func (c *Client) method(ctx context.Context, method, link string, ret interface{
 		c.Log.Errorln(err)
 		return nil, err
 	}
-	c.Log.Debug("Will call: %s\n", req.URL)
+	c.Log.Debugf("Will call: %s\n", req.URL)
 	//r := ResourceRequest(link, req)
 
 	defaultHeaders, err := defaultHeaders(method, link, c.Config.MasterKey)
@@ -117,7 +117,7 @@ func (c *Client) method(ctx context.Context, method, link string, ret interface{
 		req.Header.Add(k, v)
 	}
 
-	c.Log.Debug("Headers: %s\n", req.Header)
+	c.Log.Debugf("Headers: %s\n", req.Header)
 
 	return c.do(ctx, req, ret)
 }
@@ -137,19 +137,9 @@ func (e RequestError) Error() string {
 	return fmt.Sprintf("%v, %v", e.Code, e.Message)
 }
 
-func (c *Client) checkResponse(ctx context.Context, retryCount int, resp *http.Response) error {
+func (c *Client) checkResponse(resp *http.Response) error {
 	if retriable(resp.StatusCode) {
-		if retryCount < c.Config.MaxRetries {
-			delay := backoffDelay(retryCount)
-			t := time.NewTimer(delay)
-			select {
-			case <-ctx.Done():
-				t.Stop()
-				return ctx.Err()
-			case <-t.C:
-				return errRetry
-			}
-		}
+		return errRetry
 	}
 	if cosmosError, ok := CosmosHTTPErrors[resp.StatusCode]; ok {
 		return cosmosError
@@ -176,36 +166,58 @@ func (c *Client) do(ctx context.Context, r *http.Request, data interface{}) (*ht
 			return nil, err
 		}
 	}
-	retryCount := 0
-	for {
+
+	var resp *http.Response
+	var err error
+	for retryCount := 0; retryCount <= c.Config.MaxRetries; retryCount++ {
+		resp = nil
+		err = nil
+		if retryCount > 0 {
+			delay := backoffDelay(retryCount)
+			t := time.NewTimer(delay)
+			select {
+			case <-ctx.Done():
+				t.Stop()
+				return nil, ctx.Err()
+			case <-t.C:
+			}
+		}
+
 		r.Body = ioutil.NopCloser(bytes.NewReader(b))
-		c.Log.Debug("Executing request")
-		resp, err := cli.Do(r)
+		c.Log.Debugln("Executing request")
+		resp, err = cli.Do(r)
 		if err != nil {
 			return nil, err
 		}
-		if ResponseHook != nil {
-			ResponseHook(ctx, r.Method, resp.Header)
+		err = c.handleResponse(ctx, r, resp, data)
+		if err != errRetry {
+			break
 		}
-		err = c.checkResponse(ctx, retryCount, resp)
-		if err == errRetry {
-			resp.Body.Close()
-			retryCount++
-			continue
-		}
-		defer resp.Body.Close()
-
-		if err != nil {
-			b, err2 := ioutil.ReadAll(resp.Body)
-			if err2 == nil {
-				c.Log.Errorln("Error response from Cosmos DB: " + string(b))
-			}
-			return resp, err
-		}
-
-		if data == nil {
-			return resp, nil
-		}
-		return resp, readJson(resp.Body, data)
 	}
+	if err == errRetry {
+		err = errUnexpectedHTTPStatus
+	}
+	return resp, err
+}
+
+
+func (c Client) handleResponse(ctx context.Context, req *http.Request, resp *http.Response, ret interface{}) error {
+	defer resp.Body.Close()
+	if ResponseHook != nil {
+		ResponseHook(ctx, req.Method, resp.Header)
+	}
+	err := c.checkResponse(resp)
+
+	if err != nil {
+		b, readErr := ioutil.ReadAll(resp.Body)
+		if readErr == nil {
+			c.Log.Errorln("Error response from Cosmos DB: " + string(b))
+		}
+		return err
+	}
+
+	if ret == nil {
+		return nil
+	}
+	return readJson(resp.Body, ret)
 }

@@ -45,7 +45,7 @@ func main() {
 		MasterKey: cfg.DbKey,
 	}
 
-	client := cosmosapi.New(cfg.DbUrl, cosmosCfg, nil)
+	client := cosmosapi.New(cfg.DbUrl, cosmosCfg, nil, nil)
 
 	// Get a database
 	db, err := client.GetDatabase(context.Background(), cfg.DbName, nil)

@@ -74,7 +74,7 @@ func RawClient(cfg Config) *cosmosapi.Client {
 	return cosmosapi.New(cfg.Uri, cosmosapi.Config{
 		MasterKey:  cfg.MasterKey,
 		MaxRetries: 3,
-	}, httpClient)
+	}, httpClient, nil)
 }
 
 func Teardown(c cosmos.Collection) {
