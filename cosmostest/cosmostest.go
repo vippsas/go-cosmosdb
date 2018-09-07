@@ -18,15 +18,12 @@ package cosmostest
 import (
 	"context"
 	"crypto/tls"
-	"net/http"
-	"os"
-
 	"crypto/x509"
 	"github.com/pkg/errors"
-	uuid "github.com/satori/go.uuid"
+	"github.com/satori/go.uuid"
 	"github.com/vippsas/go-cosmosdb/cosmos"
 	"github.com/vippsas/go-cosmosdb/cosmosapi"
-	yaml "gopkg.in/yaml.v2"
+	"net/http"
 )
 
 type Config struct {
@@ -50,23 +47,6 @@ func check(err error, message string) {
 		}
 		panic(err)
 	}
-}
-
-func loadGlobalConfig() {
-	var configDoc struct {
-		CosmosTest Config `yaml:"cosmostest"`
-	}
-
-	configfile, err := os.Open("testconfig.yaml")
-	check(err, "Problems opening testconfig.yaml")
-	defer configfile.Close()
-	d := yaml.NewDecoder(configfile)
-	err = d.Decode(&configDoc)
-	check(err, "")
-	if configDoc.CosmosTest.Uri == "" {
-		panic(errors.New("load from localconfig.yaml failed, expected info not in file"))
-	}
-	globalConfig = configDoc.CosmosTest
 }
 
 // Factory for constructing the underlying, proper cosmosapi.Client given configuration.
@@ -96,15 +76,6 @@ func RawClient(cfg Config) *cosmosapi.Client {
 	}, httpClient)
 }
 
-// Setup will initialize a fresh collection using the DB / emulator pointed to in localconfig.yaml.
-// Use New() to provide config in another manner.
-func Setup(log cosmos.Logger, collectionId, partitionKey string) cosmos.Collection {
-	if globalConfig.Uri == "" {
-		loadGlobalConfig()
-	}
-	return SetupCollection(log, globalConfig, collectionId, partitionKey)
-}
-
 func Teardown(c cosmos.Collection) {
 	if globalConfig.Uri == "" {
 		panic(errors.New("Teardown called before Setup..."))
@@ -116,7 +87,7 @@ func Teardown(c cosmos.Collection) {
 func SetupCollection(log cosmos.Logger, cfg Config, collectionId, partitionKey string) cosmos.Collection {
 	prefix := cfg.CollectionIdPrefix
 	if prefix == "" {
-		prefix = uuid.Must(uuid.NewV4()).String() + "-"
+		prefix = uuid.NewV4().String() + "-"
 	}
 
 	collectionId = prefix + collectionId

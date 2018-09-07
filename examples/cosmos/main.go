@@ -72,7 +72,7 @@ func requireNil(err error) {
 
 func main() {
 
-	c := cosmostest.Setup(log.New(os.Stderr, "", log.LstdFlags), "mycollection", "userId")
+	c := cosmostest.SetupCollection(log.New(os.Stderr, "", log.LstdFlags), cosmostest.Config{}, "mycollection", "userId")
 	defer cosmostest.Teardown(c)
 
 	var entity MyModel
