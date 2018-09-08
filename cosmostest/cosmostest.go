@@ -19,11 +19,12 @@ import (
 	"context"
 	"crypto/tls"
 	"crypto/x509"
+	"net/http"
+
+	"github.com/gofrs/uuid"
 	"github.com/pkg/errors"
-	"github.com/satori/go.uuid"
 	"github.com/vippsas/go-cosmosdb/cosmos"
 	"github.com/vippsas/go-cosmosdb/cosmosapi"
-	"net/http"
 )
 
 type Config struct {
