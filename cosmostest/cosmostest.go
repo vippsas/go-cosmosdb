@@ -88,7 +88,7 @@ func Teardown(c cosmos.Collection) {
 func SetupCollection(log cosmos.Logger, cfg Config, collectionId, partitionKey string) cosmos.Collection {
 	prefix := cfg.CollectionIdPrefix
 	if prefix == "" {
-		prefix = uuid.NewV4().String() + "-"
+		prefix = uuid.Must(uuid.NewV4()).String() + "-"
 	}
 
 	collectionId = prefix + collectionId
