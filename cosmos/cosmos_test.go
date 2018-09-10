@@ -50,6 +50,10 @@ type mockCosmos struct {
 	GotSession      string
 }
 
+func (mock *mockCosmos) QueryDocuments(ctx context.Context, dbName, collName string, qry cosmosapi.Query, docs interface{}, ops cosmosapi.QueryDocumentsOptions) (cosmosapi.QueryDocumentsResponse, error) {
+	panic("implement me")
+}
+
 func (mock *mockCosmos) reset() {
 	*mock = mockCosmos{}
 }
@@ -109,6 +113,10 @@ func (mock *mockCosmos) ReplaceDocument(ctx context.Context,
 
 type mockCosmosNotFound struct {
 	mockCosmos
+}
+
+func (mockCosmosNotFound) QueryDocuments(ctx context.Context, dbName, collName string, qry cosmosapi.Query, docs interface{}, ops cosmosapi.QueryDocumentsOptions) (cosmosapi.QueryDocumentsResponse, error) {
+	panic("implement me")
 }
 
 func (mockCosmosNotFound) GetDocument(ctx context.Context, dbName, colName, id string, ops cosmosapi.GetDocumentOptions, out interface{}) error {
