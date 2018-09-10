@@ -73,7 +73,7 @@ func requireNil(err error) {
 func main() {
 
 	c := cosmostest.SetupCollection(log.New(os.Stderr, "", log.LstdFlags), cosmostest.Config{}, "mycollection", "userId")
-	defer cosmostest.Teardown(c)
+	defer cosmostest.TeardownCollection(c, true)
 
 	var entity MyModel
 	requireNil(c.StaleGet("alice", "id2", &entity))

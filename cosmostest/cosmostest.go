@@ -39,8 +39,6 @@ type Config struct {
 	AllowExistingCollection bool   `yaml:"AllowExistingCollection"`
 }
 
-var globalConfig Config
-
 func check(err error, message string) {
 	if err != nil {
 		if message != "" {
@@ -77,23 +75,21 @@ func RawClient(cfg Config) *cosmosapi.Client {
 	}, httpClient)
 }
 
-func Teardown(c cosmos.Collection) {
-	if globalConfig.Uri == "" {
-		panic(errors.New("Teardown called before Setup..."))
-	}
-
-	// Not implemented in driver yet..
-}
-
 func SetupCollection(log cosmos.Logger, cfg Config, collectionId, partitionKey string) cosmos.Collection {
-	prefix := cfg.CollectionIdPrefix
-	if prefix == "" {
-		prefix = uuid.Must(uuid.NewV4()).String() + "-"
+	if cfg.CollectionIdPrefix == "" {
+		cfg.CollectionIdPrefix = uuid.Must(uuid.NewV4()).String() + "-"
 	}
-
-	collectionId = prefix + collectionId
-
+	if cfg.DbName == "" {
+		cfg.DbName = "default"
+	}
+	collectionId = cfg.CollectionIdPrefix + collectionId
 	client := RawClient(cfg)
+	if _, err := client.CreateDatabase(context.TODO(), cfg.DbName, nil); err != nil {
+		if errors.Cause(err) != cosmosapi.ErrConflict {
+			check(err, "Failed to create database")
+		}
+		// Database already existed, which is OK
+	}
 	_, err := client.CreateCollection(context.Background(), cfg.DbName, cosmosapi.CollectionCreateOptions{
 		Id: collectionId,
 		PartitionKey: &cosmosapi.PartitionKey{
@@ -115,4 +111,12 @@ func SetupCollection(log cosmos.Logger, cfg Config, collectionId, partitionKey s
 		Log:          log,
 	}
 
+}
+
+func TeardownCollection(collection cosmos.Collection, keepDatabase bool) {
+	if keepDatabase {
+		collection.Client.DeleteCollection(collection.Context, collection.DbName, collection.Name)
+	} else {
+		collection.Client.DeleteDatabase(collection.Context, collection.DbName, nil)
+	}
 }

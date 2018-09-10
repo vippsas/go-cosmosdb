@@ -54,6 +54,14 @@ func (mock *mockCosmos) QueryDocuments(ctx context.Context, dbName, collName str
 	panic("implement me")
 }
 
+func (mock *mockCosmos) DeleteCollection(ctx context.Context, dbName, colName string) error {
+	panic("implement me")
+}
+
+func (mock *mockCosmos) DeleteDatabase(ctx context.Context, dbName string, ops *cosmosapi.RequestOptions) error {
+	panic("implement me")
+}
+
 func (mock *mockCosmos) reset() {
 	*mock = mockCosmos{}
 }
@@ -122,6 +130,15 @@ func (mockCosmosNotFound) QueryDocuments(ctx context.Context, dbName, collName s
 func (mockCosmosNotFound) GetDocument(ctx context.Context, dbName, colName, id string, ops cosmosapi.GetDocumentOptions, out interface{}) error {
 	return cosmosapi.ErrNotFound
 }
+
+func (mock *mockCosmosNotFound) DeleteCollection(ctx context.Context, dbName, colName string) error {
+	panic("implement me")
+}
+
+func (mock *mockCosmosNotFound) DeleteDatabase(ctx context.Context, dbName string, ops *cosmosapi.RequestOptions) error {
+	panic("implement me")
+}
+
 
 //
 // Tests
