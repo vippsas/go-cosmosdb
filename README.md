@@ -1,4 +1,5 @@
-# go-cosmosdb
+# go-cosmosdb [![Build Status](https://travis-ci.com/vippsas/go-cosmosdb.svg?branch=master)](https://travis-ci.com/vippsas/go-cosmosdb)
+
 go sdk for Azure Cosmos DB
 
 * no `_self` links
