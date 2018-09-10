@@ -174,3 +174,8 @@ func (c Collection) RacingPut(entity interface{}) error {
 	_, _, err := c.put(c.GetContext(), entity, base, partitionValue, false)
 	return err
 }
+
+func (c Collection) Query(query string, entities interface{}) error {
+	_, err := c.Client.QueryDocuments(c.Context, c.DbName, c.Name, cosmosapi.Query{Query: query}, entities, cosmosapi.DefaultQueryDocumentOptions())
+	return err
+}
