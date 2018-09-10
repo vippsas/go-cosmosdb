@@ -113,10 +113,6 @@ func SetupCollection(log cosmos.Logger, cfg Config, collectionId, partitionKey s
 
 }
 
-func TeardownCollection(collection cosmos.Collection, keepDatabase bool) {
-	if keepDatabase {
-		collection.Client.DeleteCollection(collection.Context, collection.DbName, collection.Name)
-	} else {
-		collection.Client.DeleteDatabase(collection.Context, collection.DbName, nil)
-	}
+func TeardownCollection(collection cosmos.Collection) {
+	collection.Client.DeleteCollection(collection.Context, collection.DbName, collection.Name)
 }
