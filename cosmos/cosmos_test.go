@@ -43,7 +43,7 @@ type mockCosmos struct {
 	ReturnSession   string
 	ReturnError     error
 	GotId           string
-	GotPartitionKey string
+	GotPartitionKey interface{}
 	GotMethod       string
 	GotUpsert       bool
 	GotX            int
@@ -138,7 +138,6 @@ func (mock *mockCosmosNotFound) DeleteCollection(ctx context.Context, dbName, co
 func (mock *mockCosmosNotFound) DeleteDatabase(ctx context.Context, dbName string, ops *cosmosapi.RequestOptions) error {
 	panic("implement me")
 }
-
 
 //
 // Tests

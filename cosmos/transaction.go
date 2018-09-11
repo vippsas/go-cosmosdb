@@ -97,7 +97,7 @@ func (txn *Transaction) commit() error {
 
 }
 
-func (txn *Transaction) Get(partitionValue, id string, target interface{}) (err error) {
+func (txn *Transaction) Get(partitionValue interface{}, id string, target interface{}) (err error) {
 
 	if txn.fetchedId != "" && txn.fetchedId != id {
 		return errors.Wrap(NotImplementedError, "Fetching one than one entity in transaction not supported yet")
