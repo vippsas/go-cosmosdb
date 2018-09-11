@@ -15,6 +15,7 @@ var (
 	errRetry                 = errors.New("retry")
 	ErrorNotImplemented      = errors.New("not implemented")
 	ErrWrongQueryContentType = errors.New("Wrong content type. Must be " + QUERY_CONTENT_TYPE)
+	ErrMaxRetriesExceeded	 = errors.New("Max retries exceeded")
 
 	// Map http codes to cosmos errors messages
 	// Description taken directly from https://docs.microsoft.com/en-us/rest/api/cosmos-db/http-status-codes-for-cosmosdb

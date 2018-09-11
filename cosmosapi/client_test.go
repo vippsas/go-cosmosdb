@@ -24,7 +24,7 @@ func TestOne(t *testing.T) {
 	cfg := Config{
 		MasterKey: TestKey,
 	}
-	c := New(ts.URL, cfg, nil)
+	c := New(ts.URL, cfg, nil, nil)
 
 	_, err := c.GetDatabase(context.Background(), "ToDoList", nil)
 	assert.NotNil(t, err)

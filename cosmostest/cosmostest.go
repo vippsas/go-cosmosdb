@@ -72,7 +72,7 @@ func RawClient(cfg Config) *cosmosapi.Client {
 	return cosmosapi.New(cfg.Uri, cosmosapi.Config{
 		MasterKey:  cfg.MasterKey,
 		MaxRetries: 3,
-	}, httpClient)
+	}, httpClient, nil)
 }
 
 func SetupCollection(log cosmos.Logger, cfg Config, collectionId, partitionKey string) cosmos.Collection {
