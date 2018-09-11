@@ -110,7 +110,7 @@ func newCosmosDbClient(masterKey string) *cosmosapi.Client {
 	cosmosCfg := cosmosapi.Config{
 		MasterKey: masterKey,
 	}
-	client := cosmosapi.New(fmt.Sprintf("https://%s.documents.azure.com:443", options.instanceName), cosmosCfg, nil)
+	client := cosmosapi.New(fmt.Sprintf("https://%s.documents.azure.com:443", options.instanceName), cosmosCfg, nil, nil)
 	return client
 }
 
