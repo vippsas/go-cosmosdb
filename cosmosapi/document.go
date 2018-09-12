@@ -5,7 +5,6 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
-	"encoding/json"
 )
 
 // Document
@@ -26,7 +25,6 @@ const (
 	ConsistencyLevelSession  = ConsistencyLevel("Session")
 	ConsistencyLevelEventual = ConsistencyLevel("Eventual")
 )
-
 
 type CreateDocumentOptions struct {
 	PartitionKeyValue   interface{}
@@ -51,11 +49,11 @@ func (ops CreateDocumentOptions) AsHeaders() (map[string]string, error) {
 	headers := map[string]string{}
 
 	if ops.PartitionKeyValue != nil {
-		v, err := json.Marshal([]interface{}{ops.PartitionKeyValue})
+		v, err := MarshalPartitionKeyHeader(ops.PartitionKeyValue)
 		if err != nil {
 			return nil, err
 		}
-		headers[HEADER_PARTITIONKEY] = string(v)
+		headers[HEADER_PARTITIONKEY] = v
 	}
 
 	headers[HEADER_UPSERT] = strconv.FormatBool(ops.IsUpsert)
@@ -128,11 +126,11 @@ func (ops GetDocumentOptions) AsHeaders() (map[string]string, error) {
 	headers[HEADER_IF_NONE_MATCH] = strconv.FormatBool(ops.IfNoneMatch)
 
 	if ops.PartitionKeyValue != nil {
-		v, err := json.Marshal([]interface{}{ops.PartitionKeyValue})
+		v, err := MarshalPartitionKeyHeader(ops.PartitionKeyValue)
 		if err != nil {
 			return nil, err
 		}
-		headers[HEADER_PARTITIONKEY] = string(v)
+		headers[HEADER_PARTITIONKEY] = v
 	}
 
 	if ops.ConsistencyLevel != "" {
@@ -176,11 +174,11 @@ func (ops ReplaceDocumentOptions) AsHeaders() (map[string]string, error) {
 	headers := map[string]string{}
 
 	if ops.PartitionKeyValue != nil {
-		v, err := json.Marshal([]interface{}{ops.PartitionKeyValue})
+		v, err := MarshalPartitionKeyHeader(ops.PartitionKeyValue)
 		if err != nil {
 			return nil, err
 		}
-		headers[HEADER_PARTITIONKEY] = string(v)
+		headers[HEADER_PARTITIONKEY] = v
 	}
 
 	if ops.IndexingDirective != "" {
@@ -238,11 +236,11 @@ func (ops DeleteDocumentOptions) AsHeaders() (map[string]string, error) {
 
 	//TODO: DRY
 	if ops.PartitionKeyValue != nil {
-		v, err := json.Marshal([]interface{}{ops.PartitionKeyValue})
+		v, err := MarshalPartitionKeyHeader(ops.PartitionKeyValue)
 		if err != nil {
 			return nil, err
 		}
-		headers[HEADER_PARTITIONKEY] = string(v)
+		headers[HEADER_PARTITIONKEY] = v
 	}
 
 	if ops.PreTriggersInclude != nil && len(ops.PreTriggersInclude) > 0 {
@@ -302,11 +300,11 @@ func (ops QueryDocumentsOptions) AsHeaders() (map[string]string, error) {
 
 	//TODO: DRY
 	if ops.PartitionKeyValue != nil {
-		v, err := json.Marshal([]interface{}{ops.PartitionKeyValue})
+		v, err := MarshalPartitionKeyHeader(ops.PartitionKeyValue)
 		if err != nil {
 			return nil, err
 		}
-		headers[HEADER_PARTITIONKEY] = string(v)
+		headers[HEADER_PARTITIONKEY] = v
 	}
 
 	headers[HEADER_IS_QUERY] = strconv.FormatBool(ops.IsQuery)
