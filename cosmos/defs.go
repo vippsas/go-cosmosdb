@@ -27,4 +27,5 @@ type Client interface {
 	QueryDocuments(ctx context.Context, dbName, collName string, qry cosmosapi.Query, docs interface{}, ops cosmosapi.QueryDocumentsOptions) (cosmosapi.QueryDocumentsResponse, error)
 	DeleteCollection(ctx context.Context, dbName, colName string) error
 	DeleteDatabase(ctx context.Context, dbName string, ops *cosmosapi.RequestOptions) error
+	ExecuteStoredProcedure(ctx context.Context, dbName, colName, sprocName string, ops cosmosapi.ExecuteStoredProcedureOptions, ret interface{}, args ... interface{}) error
 }
