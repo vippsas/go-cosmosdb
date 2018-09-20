@@ -84,13 +84,13 @@ func (txn *Transaction) commit() error {
 		// b) add updated entity to the session's entity cache.
 		// If there is an error here it would be in JSON serialized; in that case panic, it should
 		// never happen since we just serialized in the same way above...
-		if jsonSerializationErr := txn.session.cacheSet(base.Id, txn.toPut); jsonSerializationErr != nil {
+		if jsonSerializationErr := txn.session.cacheSet(partitionValue, base.Id, txn.toPut); jsonSerializationErr != nil {
 			panic(errors.Errorf("This should never happen: The entity successfully serialized to JSON the first time, but not the second ... %s", jsonSerializationErr))
 		}
 
 	} else if errors.Cause(err) == cosmosapi.ErrPreconditionFailed {
 		// We know that this object is staled, make sure to remove it from cache
-		txn.session.Drop(base.Id)
+		txn.session.Drop(partitionValue, base.Id)
 	}
 
 	return err
@@ -100,11 +100,11 @@ func (txn *Transaction) commit() error {
 func (txn *Transaction) Get(partitionValue interface{}, id string, target interface{}) (err error) {
 
 	if txn.fetchedId != "" && txn.fetchedId != id {
-		return errors.Wrap(NotImplementedError, "Fetching one than one entity in transaction not supported yet")
+		return errors.Wrap(NotImplementedError, "Fetching more than one entity in transaction not supported yet")
 	}
 
 	var found bool
-	found, err = txn.session.cacheGet(id, target)
+	found, err = txn.session.cacheGet(partitionValue, id, target)
 	if err != nil {
 		// Trouble in JSON deserialization from cache; a bug in deserialization hooks or similar... return it
 		return err
@@ -120,6 +120,9 @@ func (txn *Transaction) Get(partitionValue interface{}, id string, target interf
 			target,
 			cosmosapi.ConsistencyLevelSession,
 			txn.session.Token())
+		if err == nil {
+			txn.session.cacheSet(partitionValue, id, target)
+		}
 	}
 
 	if err == nil {

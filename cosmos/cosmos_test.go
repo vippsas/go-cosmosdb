@@ -4,6 +4,7 @@ import (
 	"context"
 	"testing"
 
+	"encoding/json"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/require"
 	"github.com/vippsas/go-cosmosdb/cosmosapi"
@@ -20,7 +21,8 @@ type MyModel struct {
 	X           int    `json:"x"`           // data
 	SetByPrePut string `json:"setByPrePut"` // set by pre-put hook
 
-	XPlusOne int `json:-` // computed field set by post-get hook
+	XPlusOne       int `json:-` // computed field set by post-get hook
+	PostGetCounter int // Incremented by post-get hook
 }
 
 func (e *MyModel) PrePut(txn *Transaction) error {
@@ -30,6 +32,7 @@ func (e *MyModel) PrePut(txn *Transaction) error {
 
 func (e *MyModel) PostGet(txn *Transaction) error {
 	e.XPlusOne = e.X + 1
+	e.PostGetCounter += 1
 	return nil
 }
 
@@ -240,11 +243,22 @@ func TestTransactionCacheHappyDay(t *testing.T) {
 
 	session := c.Session()
 
+	checkCachedEtag := func(expect string) {
+		s := struct {
+			Etag string `json:"_etag"`
+		}{}
+		key, err := cacheKey("partitionvalue", "idvalue")
+		require.NoError(t, err)
+		json.Unmarshal([]byte(session.state.entityCache[key]), &s)
+		require.Equal(t, expect, s.Etag)
+	}
+
 	var entity MyModel // in production code this should be declared inside closure, but want more control in this test
 
 	require.NoError(t, session.Transaction(func(txn *Transaction) error {
 		entity.X = -20
 		mock.ReturnError = cosmosapi.ErrNotFound
+		require.Equal(t, 0, len(session.state.entityCache))
 		require.NoError(t, txn.Get("partitionvalue", "idvalue", &entity))
 		require.Equal(t, "get", mock.GotMethod)
 		// due to ErrNotFound, the Get() should zero-initialize to wipe the -20
@@ -257,7 +271,8 @@ func TestTransactionCacheHappyDay(t *testing.T) {
 		txn.Put(&entity)
 		// *not* put yet, so mock not called yet, and not in cache
 		require.Equal(t, "", mock.GotMethod)
-		require.Equal(t, 0, len(session.state.entityCache))
+		require.Equal(t, 1, len(session.state.entityCache))
+		checkCachedEtag("")
 		mock.ReturnEtag = "etag-1" // Etag returned by mock on commit; this needs to find its way into cache
 		mock.ReturnSession = "session-token-1"
 		return nil
@@ -265,10 +280,7 @@ func TestTransactionCacheHappyDay(t *testing.T) {
 	// now after exiting closure the X=42-entity was put
 	// also there was a create, not a replace, because entity.Etag was empty
 	require.Equal(t, "create", mock.GotMethod)
-	// cache should be populated
-	jsonInCache, ok := session.state.entityCache["idvalue"]
-	require.True(t, ok)
-	require.Contains(t, jsonInCache, "\"etag-1\"")
+	checkCachedEtag("etag-1")
 
 	// Session token should be set from the create call
 	require.Equal(t, "session-token-1", session.Token())
@@ -292,12 +304,59 @@ func TestTransactionCacheHappyDay(t *testing.T) {
 		return nil
 	}))
 	require.Equal(t, "replace", mock.GotMethod) // this time mock returned an etag on Get(), so we got a replace
-	jsonInCache, ok = session.state.entityCache["idvalue"]
-	require.True(t, ok)
-	require.Contains(t, jsonInCache, "\"etag-2\"")
+	checkCachedEtag("etag-2")
 
 	// Session token should be set from the create call
 	require.Equal(t, "session-token-2", session.Token())
+}
+
+func TestCachedGet(t *testing.T) {
+	mock := mockCosmos{}
+	c := Collection{
+		Client:       &mock,
+		DbName:       "mydb",
+		Name:         "mycollection",
+		PartitionKey: "userId"}
+
+	session := c.Session()
+	var entity MyModel
+
+	resetMock := func(x int) {
+		mock.reset()
+		mock.ReturnEtag = "etag-1"
+		mock.ReturnSession = "session"
+		mock.ReturnX = x
+	}
+
+	resetMock(42)
+	require.NoError(t, session.Get("partitionvalue", "idvalue", &entity))
+	require.Equal(t, "get", mock.GotMethod)
+	// due to ErrNotFound, the Get() should zero-initialize to wipe the -20
+	require.Equal(t, 42, entity.X)
+	require.Equal(t, 43, entity.XPlusOne) // PostGetHook called
+	require.Equal(t, 1, entity.PostGetCounter)
+	require.Equal(t, "idvalue", mock.GotId)
+
+	resetMock(0)
+	require.NoError(t, session.Transaction(func(txn *Transaction) error {
+		mock.reset()
+		require.NoError(t, txn.Get("partitionvalue", "idvalue", &entity))
+		// Get() above hit cache, so mock was not called
+		require.Equal(t, "", mock.GotMethod)
+		require.Equal(t, 42, entity.X) // not the 0 value that we've set in the mock now
+		require.Equal(t, 1, entity.PostGetCounter)
+		entity.X = 43
+		entity.UserId = "partitionvalue"
+		txn.Put(&entity)
+		return nil
+	}))
+
+	// Check that the above Put() overwrites the cache
+	resetMock(43)
+	require.NoError(t, session.Get("partitionvalue", "idvalue", &entity))
+	require.Equal(t, "", mock.GotMethod)
+	require.Equal(t, 2, entity.PostGetCounter)
+	require.Equal(t, 43, entity.X) // not the 0 value that we've set in the mock now
 }
 
 func TestTransactionCollisionAndSessionTracking(t *testing.T) {
@@ -314,8 +373,8 @@ func TestTransactionCollisionAndSessionTracking(t *testing.T) {
 
 	require.NoError(t, session.WithRetries(3).WithContext(context.Background()).Transaction(func(txn *Transaction) error {
 		var entity MyModel
-
 		mock.reset()
+		mock.ReturnError = cosmosapi.ErrNotFound
 
 		require.NoError(t, txn.Get("partitionvalue", "idvalue", &entity))
 		require.Equal(t, "get", mock.GotMethod)
@@ -333,7 +392,6 @@ func TestTransactionCollisionAndSessionTracking(t *testing.T) {
 			mock.ReturnSession = "after-2"
 			mock.ReturnError = nil
 		}
-
 		attempt++
 
 		txn.Put(&entity)
