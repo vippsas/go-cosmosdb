@@ -357,14 +357,35 @@ func TestTransactionGetExisting(t *testing.T) {
 	require.NoError(t, session.WithRetries(3).WithContext(context.Background()).Transaction(func(txn *Transaction) error {
 		var entity MyModel
 
+		mock.ReturnEtag = "etag-1"
 		mock.ReturnError = nil
 		mock.ReturnX = 42
 		require.NoError(t, txn.Get("partitionvalue", "idvalue", &entity))
+		require.False(t, entity.IsNew())
 		require.Equal(t, "get", mock.GotMethod)
 		require.Equal(t, 42, entity.X)
 		require.Equal(t, 43, entity.XPlusOne) // PostGetHook called
 		return nil
 	}))
+}
+
+func TestTransactionNonExisting(t *testing.T) {
+	mock := mockCosmos{}
+	c := Collection{
+		Client:       &mock,
+		DbName:       "mydb",
+		Name:         "mycollection",
+		PartitionKey: "userId"}
+
+	session := c.Session()
+
+	require.NoError(t, session.Transaction(func(txn *Transaction) error {
+		var entity MyModel
+		require.NoError(t, txn.Get("partitionValue", "idvalue", &entity))
+		require.True(t, entity.IsNew())
+		return nil
+	}))
+	return
 }
 
 func TestTransactionRollback(t *testing.T) {
