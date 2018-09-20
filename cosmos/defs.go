@@ -8,6 +8,11 @@ import (
 
 type BaseModel cosmosapi.Resource
 
+// This method will return true if the document is new (document was not found on get, or get has not been attempted)
+func (bm *BaseModel) IsNew() bool {
+	return bm.Etag == ""
+}
+
 type Model interface {
 	// This method is called on entities after a successful Get() (whether from database or cache).
 	// If the result of a Collection.StaleGet() is used, txn==nil; if Transaction.Get() is used,
@@ -17,6 +22,8 @@ type Model interface {
 	// If Collection.RacingPut() is used, txn==nil; if we are inside a transaction
 	// commit, txn is set.
 	PrePut(txn *Transaction) error
+	// Exported by BaseModel
+	IsNew() bool
 }
 
 // Client is an interface exposing the public API of the cosmosapi.Client struct
@@ -27,5 +34,5 @@ type Client interface {
 	QueryDocuments(ctx context.Context, dbName, collName string, qry cosmosapi.Query, docs interface{}, ops cosmosapi.QueryDocumentsOptions) (cosmosapi.QueryDocumentsResponse, error)
 	DeleteCollection(ctx context.Context, dbName, colName string) error
 	DeleteDatabase(ctx context.Context, dbName string, ops *cosmosapi.RequestOptions) error
-	ExecuteStoredProcedure(ctx context.Context, dbName, colName, sprocName string, ops cosmosapi.ExecuteStoredProcedureOptions, ret interface{}, args ... interface{}) error
+	ExecuteStoredProcedure(ctx context.Context, dbName, colName, sprocName string, ops cosmosapi.ExecuteStoredProcedureOptions, ret interface{}, args ...interface{}) error
 }
