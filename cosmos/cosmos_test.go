@@ -247,7 +247,9 @@ func TestTransactionCacheHappyDay(t *testing.T) {
 		s := struct {
 			Etag string `json:"_etag"`
 		}{}
-		json.Unmarshal([]byte(session.state.entityCache["idvalue"]), &s)
+		key, err := cacheKey("partitionvalue", "idvalue")
+		require.NoError(t, err)
+		json.Unmarshal([]byte(session.state.entityCache[key]), &s)
 		require.Equal(t, expect, s.Etag)
 	}
 
@@ -344,6 +346,7 @@ func TestCachedGet(t *testing.T) {
 		require.Equal(t, 42, entity.X) // not the 0 value that we've set in the mock now
 		require.Equal(t, 1, entity.PostGetCounter)
 		entity.X = 43
+		entity.UserId = "partitionvalue"
 		txn.Put(&entity)
 		return nil
 	}))
@@ -370,8 +373,8 @@ func TestTransactionCollisionAndSessionTracking(t *testing.T) {
 
 	require.NoError(t, session.WithRetries(3).WithContext(context.Background()).Transaction(func(txn *Transaction) error {
 		var entity MyModel
-
 		mock.reset()
+		mock.ReturnError = cosmosapi.ErrNotFound
 
 		require.NoError(t, txn.Get("partitionvalue", "idvalue", &entity))
 		require.Equal(t, "get", mock.GotMethod)
@@ -389,7 +392,6 @@ func TestTransactionCollisionAndSessionTracking(t *testing.T) {
 			mock.ReturnSession = "after-2"
 			mock.ReturnError = nil
 		}
-
 		attempt++
 
 		txn.Put(&entity)

@@ -18,6 +18,15 @@ type sessionState struct {
 	entityCache map[string]string
 }
 
+func cacheKey(partitionKeyValue interface{}, id string) (string, error) {
+	// Use JSON for the cache key to match how Cosmos represents values
+	d, err := json.Marshal([]interface{}{partitionKeyValue, id})
+	if err != nil {
+		return "", errors.WithStack(err)
+	}
+	return string(d), nil
+}
+
 type Session struct {
 	Context         context.Context
 	ConflictRetries int
@@ -58,8 +67,14 @@ func (session Session) WithRetries(n int) Session {
 
 // Drop removes an entity from the session cache, so that the next fetch will always go
 // out externally to fetch it.
-func (session Session) Drop(id string) {
-	delete(session.state.entityCache, id)
+func (session Session) Drop(partitionValue interface{}, id string) {
+	key, err := cacheKey(partitionValue, id)
+	if err != nil {
+		// This shouldn't happen. If we're unable to create the cache key, we wouldn't be able to populate the cache
+		// for the partition/id combination in the first place
+		panic(err)
+	}
+	delete(session.state.entityCache, key)
 }
 
 // Convenience method for doing a simple Get within a session without explicitly starting a transaction
@@ -69,17 +84,25 @@ func (session Session) Get(partitionValue interface{}, id string, target interfa
 	})
 }
 
-func (session Session) cacheSet(id string, entity interface{}) error {
+func (session Session) cacheSet(partitionValue interface{}, id string, entity interface{}) error {
+	key, err := cacheKey(partitionValue, id)
+	if err != nil {
+		return err
+	}
 	serialized, err := json.Marshal(entity)
 	if err != nil {
 		return errors.WithStack(err)
 	}
-	session.state.entityCache[id] = string(serialized)
+	session.state.entityCache[key] = string(serialized)
 	return nil
 }
 
-func (session Session) cacheGet(id string, entityPtr interface{}) (found bool, err error) {
-	serialized, ok := session.state.entityCache[id]
+func (session Session) cacheGet(partitionKey interface{}, id string, entityPtr interface{}) (found bool, err error) {
+	key, err := cacheKey(partitionKey, id)
+	if err != nil {
+		return false, err
+	}
+	serialized, ok := session.state.entityCache[key]
 	if !ok {
 		return false, nil
 	} else {
