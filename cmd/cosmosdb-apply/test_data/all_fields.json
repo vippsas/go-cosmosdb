@@ -1,0 +1,51 @@
+[
+  {
+    "databaseId": "someDatabase",
+    "collectionId": "someCollection",
+    "offer": {
+      "throughput": 10000
+    },
+    "indexingPolicy": {
+      "automatic": true,
+      "indexingMode": "consistent",
+      "includedPaths": [
+        {
+          "path": "/*",
+          "indexes": [
+            {
+              "dataType": "String",
+              "precision": -1,
+              "kind": "Range"
+            }
+          ]
+        }
+      ]
+    },
+    "partitionKey": {
+      "paths": ["/someId"],
+      "kind": "Hash"
+    },
+    "triggers": [
+      {
+        "id": "postCreateSomething",
+        "triggerType": "Post",
+        "triggerOperation": "Create",
+        "body": {
+          "sourceLocation": "inline",
+          "inlineSource": "function trigger() {\n    let context = getContext();\n    let collection = context.getCollection();\n    let request = context.getRequest();\n    let createdDoc = request.getBody();\n\n    let accepted = collection.createDocument(collection.getSelfLink(), currentStatusDoc, (err, documentCreated) => {\n        if (err) {\n            throw err\n        }\n    });\n}\n\n"
+        }
+      },
+      {
+        "id": "postCreateSomethingFromFile",
+        "triggerType": "Post",
+        "triggerOperation": "Create",
+        "body": {
+          "sourceLocation": "file",
+          "fileName": "exampleTrigger.js"
+        }
+      }
+    ],
+    "udfs": [],
+    "sprocs": []
+  }
+]
