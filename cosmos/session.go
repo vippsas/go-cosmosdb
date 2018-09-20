@@ -62,6 +62,13 @@ func (session Session) Drop(id string) {
 	delete(session.state.entityCache, id)
 }
 
+// Convenience method for doing a simple Get within a session without explicitly starting a transaction
+func (session Session) Get(partitionValue interface{}, id string, target interface{}) error {
+	return session.Transaction(func(txn *Transaction) error {
+		return txn.Get(partitionValue, id, target)
+	})
+}
+
 func (session Session) cacheSet(id string, entity interface{}) error {
 	serialized, err := json.Marshal(entity)
 	if err != nil {

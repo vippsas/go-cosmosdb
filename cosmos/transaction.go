@@ -100,7 +100,7 @@ func (txn *Transaction) commit() error {
 func (txn *Transaction) Get(partitionValue interface{}, id string, target interface{}) (err error) {
 
 	if txn.fetchedId != "" && txn.fetchedId != id {
-		return errors.Wrap(NotImplementedError, "Fetching one than one entity in transaction not supported yet")
+		return errors.Wrap(NotImplementedError, "Fetching more than one entity in transaction not supported yet")
 	}
 
 	var found bool
@@ -120,6 +120,9 @@ func (txn *Transaction) Get(partitionValue interface{}, id string, target interf
 			target,
 			cosmosapi.ConsistencyLevelSession,
 			txn.session.Token())
+		if err == nil {
+			txn.session.cacheSet(id, target)
+		}
 	}
 
 	if err == nil {
