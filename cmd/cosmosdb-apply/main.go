@@ -49,7 +49,7 @@ func main() {
 	// --- Input is validated and we're ready to to more expensive tasks
 
 	// Parse all definition files
-	collectionDefinitions := getCollectionDefinitions(paths)
+	collectionDefinitions := getCollectionDefinitions(paths...)
 
 	client := newCosmosDbClient(masterKey)
 
@@ -134,7 +134,7 @@ func ensureDatabaseExists(client *cosmosapi.Client, def collectionDefinition) {
 
 // --- Collection related
 
-func getCollectionDefinitions(filePaths []string) []collectionDefinition {
+func getCollectionDefinitions(filePaths ...string) []collectionDefinition {
 	colDefs := make([]collectionDefinition, 0, len(filePaths))
 
 	for i := 0; i < len(filePaths); i++ {
@@ -220,8 +220,8 @@ func getCollection(client *cosmosapi.Client, def collectionDefinition) (*cosmosa
 func createCollection(def collectionDefinition, client *cosmosapi.Client) {
 	colCreateOpts := cosmosapi.CollectionCreateOptions{
 		Id:              def.CollectionID,
-		IndexingPolicy:  &def.IndexingPolicy,
-		PartitionKey:    &def.PartitionKey,
+		IndexingPolicy:  def.IndexingPolicy,
+		PartitionKey:    def.PartitionKey,
 		OfferType:       cosmosapi.OfferType(def.Offer.Type),
 		OfferThroughput: cosmosapi.OfferThroughput(def.Offer.Throughput),
 	}
@@ -237,7 +237,7 @@ func createCollection(def collectionDefinition, client *cosmosapi.Client) {
 func replaceCollection(def collectionDefinition, existingCol *cosmosapi.Collection, client *cosmosapi.Client) {
 	colReplaceOpts := cosmosapi.CollectionReplaceOptions{
 		Id:             def.CollectionID,
-		IndexingPolicy: &def.IndexingPolicy,
+		IndexingPolicy: def.IndexingPolicy,
 		PartitionKey:   existingCol.PartitionKey,
 	}
 
@@ -361,11 +361,11 @@ type collectionDefinition struct {
 		Throughput int    `json:"throughput"`
 		Type       string `json:"type"`
 	} `json:"offer"`
-	IndexingPolicy cosmosapi.IndexingPolicy `json:"indexingPolicy"`
-	PartitionKey   cosmosapi.PartitionKey   `json:"partitionKey"`
-	Triggers       []trigger                `json:"triggers"`
-	Udfs           []interface{}            `json:"udfs"`
-	Sprocs         []interface{}            `json:"sprocs"`
+	IndexingPolicy *cosmosapi.IndexingPolicy `json:"indexingPolicy,omitempty"`
+	PartitionKey   *cosmosapi.PartitionKey   `json:"partitionKey,omitempty"`
+	Triggers       []trigger                 `json:"triggers"`
+	Udfs           []interface{}             `json:"udfs"`
+	Sprocs         []interface{}             `json:"sprocs"`
 }
 
 type trigger struct {
