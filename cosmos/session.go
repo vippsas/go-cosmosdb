@@ -15,16 +15,7 @@ type sessionState struct {
 	// The entity cache is a map of string -> interface to json serialization.struct (not
 	// pointer-to-struct). All the structs are dedidcated copies owned
 	// by the cache and addresses are never handed out.
-	entityCache map[string]string
-}
-
-func cacheKey(partitionKeyValue interface{}, id string) (string, error) {
-	// Use JSON for the cache key to match how Cosmos represents values
-	d, err := json.Marshal([]interface{}{partitionKeyValue, id})
-	if err != nil {
-		return "", errors.WithStack(err)
-	}
-	return string(d), nil
+	entityCache map[uniqueKey][]byte
 }
 
 type Session struct {
@@ -37,7 +28,7 @@ type Session struct {
 func (c Collection) Session() Session {
 	return Session{
 		state: &sessionState{
-			entityCache: make(map[string]string),
+			entityCache: make(map[uniqueKey][]byte),
 		},
 		Context:         c.GetContext(), // at least context.Background() at this point ...
 		Collection:      c,
@@ -68,7 +59,7 @@ func (session Session) WithRetries(n int) Session {
 // Drop removes an entity from the session cache, so that the next fetch will always go
 // out externally to fetch it.
 func (session Session) Drop(partitionValue interface{}, id string) {
-	key, err := cacheKey(partitionValue, id)
+	key, err := newUniqueKey(partitionValue, id)
 	if err != nil {
 		// This shouldn't happen. If we're unable to create the cache key, we wouldn't be able to populate the cache
 		// for the partition/id combination in the first place
@@ -85,7 +76,7 @@ func (session Session) Get(partitionValue interface{}, id string, target interfa
 }
 
 func (session Session) cacheSet(partitionValue interface{}, id string, entity interface{}) error {
-	key, err := cacheKey(partitionValue, id)
+	key, err := newUniqueKey(partitionValue, id)
 	if err != nil {
 		return err
 	}
@@ -93,12 +84,12 @@ func (session Session) cacheSet(partitionValue interface{}, id string, entity in
 	if err != nil {
 		return errors.WithStack(err)
 	}
-	session.state.entityCache[key] = string(serialized)
+	session.state.entityCache[key] = serialized
 	return nil
 }
 
 func (session Session) cacheGet(partitionKey interface{}, id string, entityPtr interface{}) (found bool, err error) {
-	key, err := cacheKey(partitionKey, id)
+	key, err := newUniqueKey(partitionKey, id)
 	if err != nil {
 		return false, err
 	}
@@ -106,7 +97,7 @@ func (session Session) cacheGet(partitionKey interface{}, id string, entityPtr i
 	if !ok {
 		return false, nil
 	} else {
-		return true, json.Unmarshal([]byte(serialized), entityPtr)
+		return true, json.Unmarshal(serialized, entityPtr)
 	}
 }
 

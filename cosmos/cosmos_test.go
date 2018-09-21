@@ -247,7 +247,7 @@ func TestTransactionCacheHappyDay(t *testing.T) {
 		s := struct {
 			Etag string `json:"_etag"`
 		}{}
-		key, err := cacheKey("partitionvalue", "idvalue")
+		key, err := newUniqueKey("partitionvalue", "idvalue")
 		require.NoError(t, err)
 		json.Unmarshal([]byte(session.state.entityCache[key]), &s)
 		require.Equal(t, expect, s.Etag)
