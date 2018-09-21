@@ -11,7 +11,7 @@ import (
 // Transaction is simply a wrapper around Session which unlocks some of
 // the methods that should only be called inside an idempotent closure
 type Transaction struct {
-	fetchedId string      // the id that was fetched in the single allowed Get()
+	fetchedId uniqueKey   // the id that was fetched in the single allowed Get()
 	toPut     interface{} // the entity that was queued for put in the single allowed Put()
 	session   Session
 }
@@ -58,7 +58,11 @@ func (session Session) Transaction(closure func(*Transaction) error) error {
 func (txn *Transaction) commit() error {
 	// Sanity check -- help the poor developer out by not allowing put without get
 	base, partitionValue := txn.session.Collection.GetEntityInfo(txn.toPut)
-	if base.Id != txn.fetchedId {
+	uniqueKey, err := newUniqueKey(partitionValue, base.Id)
+	if err != nil {
+		return err
+	}
+	if uniqueKey != txn.fetchedId {
 		return errors.WithStack(PutWithoutGetError)
 	}
 
@@ -98,8 +102,11 @@ func (txn *Transaction) commit() error {
 }
 
 func (txn *Transaction) Get(partitionValue interface{}, id string, target interface{}) (err error) {
-
-	if txn.fetchedId != "" && txn.fetchedId != id {
+	uniqueKey, err := newUniqueKey(partitionValue, id)
+	if err != nil {
+		return err
+	}
+	if txn.fetchedId != "" && txn.fetchedId != uniqueKey {
 		return errors.Wrap(NotImplementedError, "Fetching more than one entity in transaction not supported yet")
 	}
 
@@ -126,7 +133,7 @@ func (txn *Transaction) Get(partitionValue interface{}, id string, target interf
 	}
 
 	if err == nil {
-		txn.fetchedId = id
+		txn.fetchedId = uniqueKey
 		err = postGet(target.(Model), txn)
 	}
 	return
