@@ -16,7 +16,7 @@ type QueryDocumentsResponse struct {
 	Documents    interface{}
 	Count        int `json:"_count"`
 	Continuation string
-	RUs          int
+	RUs          float64
 }
 
 // NewQuery create a query with given parameters.
