@@ -35,13 +35,13 @@ type CreateDocumentOptions struct {
 }
 
 type DocumentResponse struct {
-	RUs          int
+	RUs          float64
 	SessionToken string
 }
 
 func parseDocumentResponse(resp *http.Response) (parsed DocumentResponse) {
 	parsed.SessionToken = resp.Header.Get(HEADER_SESSION_TOKEN)
-	parsed.RUs, _ = strconv.Atoi(resp.Header.Get(HEADER_REQUEST_CHARGE))
+	parsed.RUs, _ = strconv.ParseFloat(resp.Header.Get(HEADER_REQUEST_CHARGE), 64)
 	return
 }
 
@@ -340,7 +340,7 @@ func (c *Client) QueryDocuments(ctx context.Context, dbName, collName string, qr
 	if err != nil {
 		return QueryDocumentsResponse{}, err
 	}
-	results.RUs, _ = strconv.Atoi(response.Header.Get(HEADER_REQUEST_CHARGE))
+	results.RUs, _ = strconv.ParseFloat(response.Header.Get(HEADER_REQUEST_CHARGE), 64)
 	results.Continuation = response.Header.Get(HEADER_CONTINUATION)
 
 	return results, nil
