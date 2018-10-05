@@ -207,7 +207,7 @@ func (c Client) handleResponse(ctx context.Context, req *http.Request, resp *htt
 	if err != nil {
 		b, readErr := ioutil.ReadAll(resp.Body)
 		if readErr == nil {
-			c.Log.Errorln("Error response from Cosmos DB: " + string(b))
+			c.Log.Debugln("Error response from Cosmos DB: " + string(b))
 		}
 		return err
 	}
