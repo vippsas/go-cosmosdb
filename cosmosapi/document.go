@@ -305,6 +305,8 @@ func (ops QueryDocumentsOptions) AsHeaders() (map[string]string, error) {
 			return nil, err
 		}
 		headers[HEADER_PARTITIONKEY] = v
+	} else if ops.EnableCrossPartition {
+		headers[HEADER_CROSSPARTITION] = "true"
 	}
 
 	headers[HEADER_IS_QUERY] = strconv.FormatBool(ops.IsQuery)
