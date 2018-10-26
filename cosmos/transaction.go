@@ -11,8 +11,8 @@ import (
 // Transaction is simply a wrapper around Session which unlocks some of
 // the methods that should only be called inside an idempotent closure
 type Transaction struct {
-	fetchedId uniqueKey   // the id that was fetched in the single allowed Get()
-	toPut     interface{} // the entity that was queued for put in the single allowed Put()
+	fetchedId uniqueKey // the id that was fetched in the single allowed Get()
+	toPut     Model     // the entity that was queued for put in the single allowed Put()
 	session   Session
 }
 
@@ -101,7 +101,7 @@ func (txn *Transaction) commit() error {
 
 }
 
-func (txn *Transaction) Get(partitionValue interface{}, id string, target interface{}) (err error) {
+func (txn *Transaction) Get(partitionValue interface{}, id string, target Model) (err error) {
 	uniqueKey, err := newUniqueKey(partitionValue, id)
 	if err != nil {
 		return err
@@ -134,11 +134,11 @@ func (txn *Transaction) Get(partitionValue interface{}, id string, target interf
 
 	if err == nil {
 		txn.fetchedId = uniqueKey
-		err = postGet(target.(Model), txn)
+		err = postGet(target, txn)
 	}
 	return
 }
 
-func (txn *Transaction) Put(entityPtr interface{}) {
+func (txn *Transaction) Put(entityPtr Model) {
 	txn.toPut = entityPtr
 }

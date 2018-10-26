@@ -69,13 +69,13 @@ func (session Session) Drop(partitionValue interface{}, id string) {
 }
 
 // Convenience method for doing a simple Get within a session without explicitly starting a transaction
-func (session Session) Get(partitionValue interface{}, id string, target interface{}) error {
+func (session Session) Get(partitionValue interface{}, id string, target Model) error {
 	return session.Transaction(func(txn *Transaction) error {
 		return txn.Get(partitionValue, id, target)
 	})
 }
 
-func (session Session) cacheSet(partitionValue interface{}, id string, entity interface{}) error {
+func (session Session) cacheSet(partitionValue interface{}, id string, entity Model) error {
 	key, err := newUniqueKey(partitionValue, id)
 	if err != nil {
 		return err
@@ -88,7 +88,7 @@ func (session Session) cacheSet(partitionValue interface{}, id string, entity in
 	return nil
 }
 
-func (session Session) cacheGet(partitionKey interface{}, id string, entityPtr interface{}) (found bool, err error) {
+func (session Session) cacheGet(partitionKey interface{}, id string, entityPtr Model) (found bool, err error) {
 	key, err := newUniqueKey(partitionKey, id)
 	if err != nil {
 		return false, err

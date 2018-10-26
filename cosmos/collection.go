@@ -36,7 +36,7 @@ func (c Collection) WithContext(ctx context.Context) Collection {
 	return c
 }
 
-func (c Collection) get(ctx context.Context, partitionValue interface{}, id string, target interface{}, consistency cosmosapi.ConsistencyLevel, sessionToken string) error {
+func (c Collection) get(ctx context.Context, partitionValue interface{}, id string, target Model, consistency cosmosapi.ConsistencyLevel, sessionToken string) error {
 	err := c.getExisting(ctx, partitionValue, id, target, consistency, sessionToken)
 	if err != nil && errors.Cause(err) == cosmosapi.ErrNotFound {
 		err = nil
@@ -65,7 +65,7 @@ func (c Collection) get(ctx context.Context, partitionValue interface{}, id stri
 	return err
 }
 
-func (c Collection) getExisting(ctx context.Context, partitionValue interface{}, id string, target interface{}, consistency cosmosapi.ConsistencyLevel, sessionToken string) error {
+func (c Collection) getExisting(ctx context.Context, partitionValue interface{}, id string, target Model, consistency cosmosapi.ConsistencyLevel, sessionToken string) error {
 	opts := cosmosapi.GetDocumentOptions{
 		PartitionKeyValue: partitionValue,
 		ConsistencyLevel:  consistency,
@@ -81,7 +81,7 @@ func (c Collection) getExisting(ctx context.Context, partitionValue interface{},
 // StaleGet reads an element from the database. `target` should be a pointer to a struct
 // that empeds BaseModel. If the document does not exist, the recipient
 // struct is filled with the zero-value, including Etag which will become an empty String.
-func (c Collection) StaleGet(partitionValue interface{}, id string, target interface{}) error {
+func (c Collection) StaleGet(partitionValue interface{}, id string, target Model) error {
 	err := c.get(c.GetContext(), partitionValue, id, target, cosmosapi.ConsistencyLevelEventual, "")
 	if err == nil {
 		err = postGet(target.(Model), nil)
@@ -92,7 +92,7 @@ func (c Collection) StaleGet(partitionValue interface{}, id string, target inter
 // StaleGetExisting is similar to StaleGet, but returns an error if
 // the document is not found instead of an empty document.  Test for
 // this condition using errors.Cause(e) == cosmosapi.ErrNotFound
-func (c Collection) StaleGetExisting(partitionValue interface{}, id string, target interface{}) error {
+func (c Collection) StaleGetExisting(partitionValue interface{}, id string, target Model) error {
 	err := c.getExisting(c.GetContext(), partitionValue, id, target, cosmosapi.ConsistencyLevelEventual, "")
 	if err == nil {
 		err = postGet(target.(Model), nil)
@@ -107,7 +107,7 @@ func (c Collection) StaleGetExisting(partitionValue interface{}, id string, targ
 //
 // Note: GetEntityInfo will also always assert that the Model property is set to the declared
 // value
-func (c Collection) GetEntityInfo(entityPtr interface{}) (res BaseModel, partitionValue interface{}) {
+func (c Collection) GetEntityInfo(entityPtr Model) (res BaseModel, partitionValue interface{}) {
 	if c.PartitionKey == "" {
 		panic(errors.Errorf("Please initialize PartitionKey in your Collection struct"))
 	}
@@ -136,7 +136,7 @@ func (c Collection) GetEntityInfo(entityPtr interface{}) (res BaseModel, partiti
 	return
 }
 
-func (c Collection) put(ctx context.Context, entity interface{}, base BaseModel, partitionValue interface{}, consistent bool) (
+func (c Collection) put(ctx context.Context, entityPtr Model, base BaseModel, partitionValue interface{}, consistent bool) (
 	resource *cosmosapi.Resource, response cosmosapi.DocumentResponse, err error) {
 
 	// if consistent = false, we always use the database upsert primitive (non-consistent put)
@@ -146,7 +146,7 @@ func (c Collection) put(ctx context.Context, entity interface{}, base BaseModel,
 			PartitionKeyValue: partitionValue,
 			IsUpsert:          !consistent,
 		}
-		resource, response, err = c.Client.CreateDocument(ctx, c.DbName, c.Name, entity, opts)
+		resource, response, err = c.Client.CreateDocument(ctx, c.DbName, c.Name, entityPtr, opts)
 		if consistent && errors.Cause(err) == cosmosapi.ErrConflict {
 			// For consistent creation with Etag="" we translate ErrConflict on creation to ErrPreconditionFailed
 			err = errors.WithStack(cosmosapi.ErrPreconditionFailed)
@@ -156,7 +156,7 @@ func (c Collection) put(ctx context.Context, entity interface{}, base BaseModel,
 			PartitionKeyValue: partitionValue,
 			IfMatch:           base.Etag,
 		}
-		resource, response, err = c.Client.ReplaceDocument(ctx, c.DbName, c.Name, base.Id, entity, opts)
+		resource, response, err = c.Client.ReplaceDocument(ctx, c.DbName, c.Name, base.Id, entityPtr, opts)
 	}
 	err = errors.WithStack(err)
 	return
@@ -164,14 +164,14 @@ func (c Collection) put(ctx context.Context, entity interface{}, base BaseModel,
 
 // PutInconsistent simply does a raw write of document passed in without any considerations about races
 // or consistency. An "upsert" will be performed without any Etag checks. `doc` should be a pointer to the struct
-func (c Collection) RacingPut(entity interface{}) error {
-	base, partitionValue := c.GetEntityInfo(entity)
+func (c Collection) RacingPut(entityPtr Model) error {
+	base, partitionValue := c.GetEntityInfo(entityPtr)
 
-	if err := prePut(entity.(Model), nil); err != nil {
+	if err := prePut(entityPtr.(Model), nil); err != nil {
 		return err
 	}
 
-	_, _, err := c.put(c.GetContext(), entity, base, partitionValue, false)
+	_, _, err := c.put(c.GetContext(), entityPtr, base, partitionValue, false)
 	return err
 }
 
