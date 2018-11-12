@@ -168,10 +168,15 @@ type ReplaceDocumentOptions struct {
 	PreTriggersInclude  []string
 	PostTriggersInclude []string
 	IfMatch             string
+	IfNoneMatch         bool
+	ConsistencyLevel    ConsistencyLevel
+	SessionToken        string
 }
 
 func (ops ReplaceDocumentOptions) AsHeaders() (map[string]string, error) {
 	headers := map[string]string{}
+
+	headers[HEADER_IF_NONE_MATCH] = strconv.FormatBool(ops.IfNoneMatch)
 
 	if ops.PartitionKeyValue != nil {
 		v, err := MarshalPartitionKeyHeader(ops.PartitionKeyValue)
@@ -195,6 +200,14 @@ func (ops ReplaceDocumentOptions) AsHeaders() (map[string]string, error) {
 
 	if ops.IfMatch != "" {
 		headers[HEADER_IF_MATCH] = ops.IfMatch
+	}
+
+	if ops.ConsistencyLevel != "" {
+		headers[HEADER_CONSISTENCY_LEVEL] = string(ops.ConsistencyLevel)
+	}
+
+	if ops.SessionToken != "" {
+		headers[HEADER_SESSION_TOKEN] = ops.SessionToken
 	}
 
 	return headers, nil
@@ -234,7 +247,7 @@ type DeleteDocumentOptions struct {
 func (ops DeleteDocumentOptions) AsHeaders() (map[string]string, error) {
 	headers := map[string]string{}
 
-	//TODO: DRY
+	// TODO: DRY
 	if ops.PartitionKeyValue != nil {
 		v, err := MarshalPartitionKeyHeader(ops.PartitionKeyValue)
 		if err != nil {
@@ -298,7 +311,7 @@ func DefaultQueryDocumentOptions() QueryDocumentsOptions {
 func (ops QueryDocumentsOptions) AsHeaders() (map[string]string, error) {
 	headers := map[string]string{}
 
-	//TODO: DRY
+	// TODO: DRY
 	if ops.PartitionKeyValue != nil {
 		v, err := MarshalPartitionKeyHeader(ops.PartitionKeyValue)
 		if err != nil {
