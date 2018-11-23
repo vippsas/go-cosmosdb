@@ -145,21 +145,19 @@ func (ops GetDocumentOptions) AsHeaders() (map[string]string, error) {
 }
 
 func (c *Client) GetDocument(ctx context.Context, dbName, colName, id string,
-	ops GetDocumentOptions, out interface{}) error {
-
+	ops GetDocumentOptions, out interface{}) (DocumentResponse, error) {
 	headers, err := ops.AsHeaders()
 	if err != nil {
-		return err
+		return DocumentResponse{}, err
 	}
 
 	link := createDocLink(dbName, colName, id)
 
-	err = c.get(ctx, link, out, headers)
+	resp, err := c.get(ctx, link, out, headers)
 	if err != nil {
-		return err
+		return DocumentResponse{}, err
 	}
-
-	return nil
+	return parseDocumentResponse(resp), nil
 }
 
 type ReplaceDocumentOptions struct {

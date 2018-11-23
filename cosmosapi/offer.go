@@ -43,7 +43,7 @@ func createOfferLink(offerId string) string {
 // https://docs.microsoft.com/en-us/rest/api/cosmos-db/get-an-offer
 func (c *Client) GetOffer(ctx context.Context, offerId string, ops *RequestOptions) (*Offer, error) {
 	offer := &Offer{}
-	err := c.get(ctx, createOfferLink(offerId), offer, nil)
+	_, err := c.get(ctx, createOfferLink(offerId), offer, nil)
 
 	if err != nil {
 		return nil, err
@@ -57,7 +57,7 @@ func (c *Client) ListOffers(ctx context.Context, ops *RequestOptions) (*Offers, 
 	url := createOfferLink("")
 
 	offers := &Offers{}
-	err := c.get(ctx, url, offers, nil)
+	_, err := c.get(ctx, url, offers, nil)
 	if err != nil {
 		return nil, err
 	}

@@ -47,7 +47,7 @@ func (c *Client) GetDatabase(ctx context.Context, dbName string, ops *RequestOpt
 
 	db := &Database{}
 
-	err := c.get(ctx, createDatabaseLink(dbName), db, nil)
+	_, err := c.get(ctx, createDatabaseLink(dbName), db, nil)
 	if err != nil {
 		return nil, err
 	}

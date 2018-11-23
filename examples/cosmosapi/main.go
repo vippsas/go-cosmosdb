@@ -95,7 +95,7 @@ func main() {
 	ro := cosmosapi.GetDocumentOptions{
 		PartitionKeyValue: "asdf",
 	}
-	err = client.GetDocument(context.Background(), cfg.DbName, "invoices", "aaa", ro, &doc)
+	_, err = client.GetDocument(context.Background(), cfg.DbName, "invoices", "aaa", ro, &doc)
 	if err != nil {
 		err = errors.WithStack(err)
 		fmt.Println(err)
@@ -134,7 +134,7 @@ func main() {
 	ro = cosmosapi.GetDocumentOptions{
 		PartitionKeyValue: "asdf",
 	}
-	err = client.GetDocument(context.Background(), cfg.DbName, "invoices", "aaa", ro, &doc)
+	_, err = client.GetDocument(context.Background(), cfg.DbName, "invoices", "aaa", ro, &doc)
 	if err != nil {
 		err = errors.WithStack(err)
 		fmt.Println(err)

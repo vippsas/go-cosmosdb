@@ -74,7 +74,7 @@ func (mock *mockCosmos) reset() {
 }
 
 func (mock *mockCosmos) GetDocument(ctx context.Context,
-	dbName, colName, id string, ops cosmosapi.GetDocumentOptions, out interface{}) error {
+	dbName, colName, id string, ops cosmosapi.GetDocumentOptions, out interface{}) (cosmosapi.DocumentResponse, error) {
 
 	mock.GotId = id
 	mock.GotMethod = "get"
@@ -84,7 +84,7 @@ func (mock *mockCosmos) GetDocument(ctx context.Context,
 	t.X = mock.ReturnX
 	t.BaseModel.Etag = mock.ReturnEtag
 	t.BaseModel.Id = id
-	return mock.ReturnError
+	return cosmosapi.DocumentResponse{SessionToken: mock.ReturnSession}, mock.ReturnError
 }
 
 func (mock *mockCosmos) CreateDocument(ctx context.Context,
@@ -138,8 +138,8 @@ func (mockCosmosNotFound) ExecuteStoredProcedure(ctx context.Context, dbName, co
 	panic("implement me")
 }
 
-func (mockCosmosNotFound) GetDocument(ctx context.Context, dbName, colName, id string, ops cosmosapi.GetDocumentOptions, out interface{}) error {
-	return cosmosapi.ErrNotFound
+func (mockCosmosNotFound) GetDocument(ctx context.Context, dbName, colName, id string, ops cosmosapi.GetDocumentOptions, out interface{}) (cosmosapi.DocumentResponse, error) {
+	return cosmosapi.DocumentResponse{}, cosmosapi.ErrNotFound
 }
 
 func (mock *mockCosmosNotFound) DeleteCollection(ctx context.Context, dbName, colName string) error {

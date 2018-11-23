@@ -55,7 +55,7 @@ func (c *Client) GetStoredProcedure(ctx context.Context, dbName, colName, sprocN
 	ret := &StoredProcedure{}
 	link := createSprocLink(dbName, colName, sprocName)
 
-	err := c.get(ctx, link, ret, nil)
+	_, err := c.get(ctx, link, ret, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -66,7 +66,7 @@ func (c *Client) ListStoredProcedures(ctx context.Context, dbName, colName strin
 	ret := &StoredProcedures{}
 	link := createSprocsLink(dbName, colName)
 
-	err := c.get(ctx, link, ret, nil)
+	_, err := c.get(ctx, link, ret, nil)
 	if err != nil {
 		return nil, err
 	}

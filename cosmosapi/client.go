@@ -56,9 +56,8 @@ func New(url string, cfg Config, cl *http.Client, log logging.StdLogger) *Client
 	return client
 }
 
-func (c *Client) get(ctx context.Context, link string, ret interface{}, headers map[string]string) error {
-	_, err := c.method(ctx, "GET", link, ret, nil, headers)
-	return err
+func (c *Client) get(ctx context.Context, link string, ret interface{}, headers map[string]string) (*http.Response, error) {
+	return c.method(ctx, "GET", link, ret, nil, headers)
 }
 
 func (c *Client) create(ctx context.Context, link string, body, ret interface{}, headers map[string]string) (*http.Response, error) {
@@ -195,7 +194,6 @@ func (c *Client) do(ctx context.Context, r *http.Request, data interface{}) (*ht
 	}
 	return resp, ErrMaxRetriesExceeded
 }
-
 
 func (c Client) handleResponse(ctx context.Context, req *http.Request, resp *http.Response, ret interface{}) error {
 	defer resp.Body.Close()

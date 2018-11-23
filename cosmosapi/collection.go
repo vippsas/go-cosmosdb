@@ -127,7 +127,7 @@ func (c *Client) ListCollections(ctx context.Context, dbName string) (*DocumentC
 	url := createDatabaseLink(dbName) + "/colls"
 
 	docCol := &DocumentCollection{}
-	err := c.get(ctx, url, docCol, nil)
+	_, err := c.get(ctx, url, docCol, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -138,7 +138,7 @@ func (c *Client) ListCollections(ctx context.Context, dbName string) (*DocumentC
 func (c *Client) GetCollection(ctx context.Context, dbName, colName string) (*Collection, error) {
 	collection := &Collection{}
 	link := CreateCollLink(dbName, colName)
-	err := c.get(ctx, link, collection, nil)
+	_, err := c.get(ctx, link, collection, nil)
 	if err != nil {
 		return nil, err
 	}
