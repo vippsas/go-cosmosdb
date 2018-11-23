@@ -114,7 +114,7 @@ func (c *Client) ListDocument(ctx context.Context, link string,
 }
 
 type GetDocumentOptions struct {
-	IfNoneMatch       bool
+	IfNoneMatch       string
 	PartitionKeyValue interface{}
 	ConsistencyLevel  ConsistencyLevel
 	SessionToken      string
@@ -123,7 +123,7 @@ type GetDocumentOptions struct {
 func (ops GetDocumentOptions) AsHeaders() (map[string]string, error) {
 	headers := map[string]string{}
 
-	headers[HEADER_IF_NONE_MATCH] = strconv.FormatBool(ops.IfNoneMatch)
+	headers[HEADER_IF_NONE_MATCH] = ops.IfNoneMatch
 
 	if ops.PartitionKeyValue != nil {
 		v, err := MarshalPartitionKeyHeader(ops.PartitionKeyValue)
@@ -166,15 +166,12 @@ type ReplaceDocumentOptions struct {
 	PreTriggersInclude  []string
 	PostTriggersInclude []string
 	IfMatch             string
-	IfNoneMatch         bool
 	ConsistencyLevel    ConsistencyLevel
 	SessionToken        string
 }
 
 func (ops ReplaceDocumentOptions) AsHeaders() (map[string]string, error) {
 	headers := map[string]string{}
-
-	headers[HEADER_IF_NONE_MATCH] = strconv.FormatBool(ops.IfNoneMatch)
 
 	if ops.PartitionKeyValue != nil {
 		v, err := MarshalPartitionKeyHeader(ops.PartitionKeyValue)
