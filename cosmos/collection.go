@@ -46,20 +46,9 @@ func (c Collection) get(ctx context.Context, partitionValue interface{}, id stri
 		zero := reflect.Zero(val.Type())
 		val.Set(zero)
 		// Then write the ID information so that Put() will work after populating the entity
-		structT := val.Type()
-		n := structT.NumField()
-		found := false
-		for i := 0; i != n; i++ {
-			if structT.Field(i).Tag.Get("json") == c.PartitionKey {
-				val.Field(i).Set(reflect.ValueOf(partitionValue))
-				found = true
-				break
-			}
-		}
-		if !found {
-			panic(errors.Errorf("Did not find any struct fields with tag json:\"%s\"", c.PartitionKey))
-		}
-		val.FieldByName("BaseModel").Addr().Interface().(*BaseModel).Id = id
+		res, partitionValueField := c.getEntityInfo(target)
+		partitionValueField.Set(reflect.ValueOf(partitionValue))
+		res.Id = id
 	}
 
 	return docResp, err
@@ -108,6 +97,11 @@ func (c Collection) StaleGetExisting(partitionValue interface{}, id string, targ
 // Note: GetEntityInfo will also always assert that the Model property is set to the declared
 // value
 func (c Collection) GetEntityInfo(entityPtr Model) (res BaseModel, partitionValue interface{}) {
+	resPtr, partitionValueField := c.getEntityInfo(entityPtr)
+	return *resPtr, partitionValueField.Interface()
+}
+
+func (c Collection) getEntityInfo(entityPtr Model) (res *BaseModel, partitionValueField reflect.Value) {
 	if c.PartitionKey == "" {
 		panic(errors.Errorf("Please initialize PartitionKey in your Collection struct"))
 	}
@@ -119,15 +113,20 @@ func (c Collection) GetEntityInfo(entityPtr Model) (res BaseModel, partitionValu
 
 	v := reflect.ValueOf(entityPtr).Elem()
 	structT := v.Type()
-	res = v.FieldByName("BaseModel").Interface().(BaseModel)
+	res = v.FieldByName("BaseModel").Addr().Interface().(*BaseModel)
 	n := structT.NumField()
 	found := false
-	for i := 0; i != n; i++ {
-		field := structT.Field(i)
-		if field.Tag.Get("json") == c.PartitionKey {
-			partitionValue = v.Field(i).Interface()
-			found = true
-			break
+	if c.PartitionKey == "id" {
+		partitionValueField = reflect.ValueOf(res).Elem().FieldByName("Id")
+		found = true
+	} else {
+		for i := 0; i != n; i++ {
+			field := structT.Field(i)
+			if field.Tag.Get("json") == c.PartitionKey {
+				partitionValueField = v.Field(i)
+				found = true
+				break
+			}
 		}
 	}
 	if !found {
