@@ -80,9 +80,8 @@ func (c *Client) replace(ctx context.Context, link string, body, ret interface{}
 	return c.method(ctx, "PUT", link, ret, buf, headers)
 }
 
-func (c *Client) delete(ctx context.Context, link string, headers map[string]string) error {
-	_, err := c.method(ctx, "DELETE", link, nil, nil, headers)
-	return err
+func (c *Client) delete(ctx context.Context, link string, headers map[string]string) (*http.Response, error) {
+	return c.method(ctx, "DELETE", link, nil, nil, headers)
 }
 
 func (c *Client) query(ctx context.Context, link string, body, ret interface{}, headers map[string]string) (*http.Response, error) {

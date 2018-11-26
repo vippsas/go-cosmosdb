@@ -262,20 +262,20 @@ func (ops DeleteDocumentOptions) AsHeaders() (map[string]string, error) {
 	return headers, nil
 }
 
-func (c *Client) DeleteDocument(ctx context.Context, dbName, colName, id string, ops DeleteDocumentOptions) error {
+func (c *Client) DeleteDocument(ctx context.Context, dbName, colName, id string, ops DeleteDocumentOptions) (DocumentResponse, error) {
 	headers, err := ops.AsHeaders()
 	if err != nil {
-		return err
+		return DocumentResponse{}, err
 	}
 
 	link := createDocLink(dbName, colName, id)
 
-	err = c.delete(ctx, link, headers)
+	resp, err := c.delete(ctx, link, headers)
 	if err != nil {
-		return err
+		return DocumentResponse{}, err
 	}
 
-	return nil
+	return parseDocumentResponse(resp), nil
 }
 
 // QueryDocumentsOptions bundles all options supported by Cosmos DB when

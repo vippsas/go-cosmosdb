@@ -48,7 +48,8 @@ func (c *Client) ReplaceStoredProcedure(
 }
 
 func (c *Client) DeleteStoredProcedure(ctx context.Context, dbName, colName, sprocName string) error {
-	return c.delete(ctx, createSprocLink(dbName, colName, sprocName), nil)
+	_, err := c.delete(ctx, createSprocLink(dbName, colName, sprocName), nil)
+	return err
 }
 
 func (c *Client) GetStoredProcedure(ctx context.Context, dbName, colName, sprocName string) (*StoredProcedure, error) {
