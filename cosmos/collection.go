@@ -36,8 +36,8 @@ func (c Collection) WithContext(ctx context.Context) Collection {
 	return c
 }
 
-func (c Collection) get(ctx context.Context, partitionValue interface{}, id string, target Model, consistency cosmosapi.ConsistencyLevel, sessionToken string) error {
-	err := c.getExisting(ctx, partitionValue, id, target, consistency, sessionToken)
+func (c Collection) get(ctx context.Context, partitionValue interface{}, id string, target Model, consistency cosmosapi.ConsistencyLevel, sessionToken string) (cosmosapi.DocumentResponse, error) {
+	docResp, err := c.getExisting(ctx, partitionValue, id, target, consistency, sessionToken)
 	if err != nil && errors.Cause(err) == cosmosapi.ErrNotFound {
 		err = nil
 		// To be bullet-proof, make sure to zero out the target. It could e.g. be used for other purposes in a loop,
@@ -46,43 +46,32 @@ func (c Collection) get(ctx context.Context, partitionValue interface{}, id stri
 		zero := reflect.Zero(val.Type())
 		val.Set(zero)
 		// Then write the ID information so that Put() will work after populating the entity
-		structT := val.Type()
-		n := structT.NumField()
-		found := false
-		for i := 0; i != n; i++ {
-			if structT.Field(i).Tag.Get("json") == c.PartitionKey {
-				val.Field(i).Set(reflect.ValueOf(partitionValue))
-				found = true
-				break
-			}
-		}
-		if !found {
-			panic(errors.Errorf("Did not find any struct fields with tag json:\"%s\"", c.PartitionKey))
-		}
-		val.FieldByName("BaseModel").Addr().Interface().(*BaseModel).Id = id
+		res, partitionValueField := c.getEntityInfo(target)
+		partitionValueField.Set(reflect.ValueOf(partitionValue))
+		res.Id = id
 	}
 
-	return err
+	return docResp, err
 }
 
-func (c Collection) getExisting(ctx context.Context, partitionValue interface{}, id string, target Model, consistency cosmosapi.ConsistencyLevel, sessionToken string) error {
+func (c Collection) getExisting(ctx context.Context, partitionValue interface{}, id string, target Model, consistency cosmosapi.ConsistencyLevel, sessionToken string) (cosmosapi.DocumentResponse, error) {
 	opts := cosmosapi.GetDocumentOptions{
 		PartitionKeyValue: partitionValue,
 		ConsistencyLevel:  consistency,
 		SessionToken:      sessionToken,
 	}
-	err := c.Client.GetDocument(ctx, c.DbName, c.Name, id, opts, target)
+	docResp, err := c.Client.GetDocument(ctx, c.DbName, c.Name, id, opts, target)
 	if err != nil {
-		return errors.Wrap(err, fmt.Sprintf("id='%s' partitionValue='%s'", id, partitionValue))
+		return docResp, errors.Wrap(err, fmt.Sprintf("id='%s' partitionValue='%s'", id, partitionValue))
 	}
-	return nil
+	return docResp, nil
 }
 
 // StaleGet reads an element from the database. `target` should be a pointer to a struct
 // that empeds BaseModel. If the document does not exist, the recipient
 // struct is filled with the zero-value, including Etag which will become an empty String.
 func (c Collection) StaleGet(partitionValue interface{}, id string, target Model) error {
-	err := c.get(c.GetContext(), partitionValue, id, target, cosmosapi.ConsistencyLevelEventual, "")
+	_, err := c.get(c.GetContext(), partitionValue, id, target, cosmosapi.ConsistencyLevelEventual, "")
 	if err == nil {
 		err = postGet(target.(Model), nil)
 	}
@@ -93,7 +82,7 @@ func (c Collection) StaleGet(partitionValue interface{}, id string, target Model
 // the document is not found instead of an empty document.  Test for
 // this condition using errors.Cause(e) == cosmosapi.ErrNotFound
 func (c Collection) StaleGetExisting(partitionValue interface{}, id string, target Model) error {
-	err := c.getExisting(c.GetContext(), partitionValue, id, target, cosmosapi.ConsistencyLevelEventual, "")
+	_, err := c.getExisting(c.GetContext(), partitionValue, id, target, cosmosapi.ConsistencyLevelEventual, "")
 	if err == nil {
 		err = postGet(target.(Model), nil)
 	}
@@ -108,6 +97,11 @@ func (c Collection) StaleGetExisting(partitionValue interface{}, id string, targ
 // Note: GetEntityInfo will also always assert that the Model property is set to the declared
 // value
 func (c Collection) GetEntityInfo(entityPtr Model) (res BaseModel, partitionValue interface{}) {
+	resPtr, partitionValueField := c.getEntityInfo(entityPtr)
+	return *resPtr, partitionValueField.Interface()
+}
+
+func (c Collection) getEntityInfo(entityPtr Model) (res *BaseModel, partitionValueField reflect.Value) {
 	if c.PartitionKey == "" {
 		panic(errors.Errorf("Please initialize PartitionKey in your Collection struct"))
 	}
@@ -119,15 +113,20 @@ func (c Collection) GetEntityInfo(entityPtr Model) (res BaseModel, partitionValu
 
 	v := reflect.ValueOf(entityPtr).Elem()
 	structT := v.Type()
-	res = v.FieldByName("BaseModel").Interface().(BaseModel)
+	res = v.FieldByName("BaseModel").Addr().Interface().(*BaseModel)
 	n := structT.NumField()
 	found := false
-	for i := 0; i != n; i++ {
-		field := structT.Field(i)
-		if field.Tag.Get("json") == c.PartitionKey {
-			partitionValue = v.Field(i).Interface()
-			found = true
-			break
+	if c.PartitionKey == "id" {
+		partitionValueField = reflect.ValueOf(res).Elem().FieldByName("Id")
+		found = true
+	} else {
+		for i := 0; i != n; i++ {
+			field := structT.Field(i)
+			if field.Tag.Get("json") == c.PartitionKey {
+				partitionValueField = v.Field(i)
+				found = true
+				break
+			}
 		}
 	}
 	if !found {

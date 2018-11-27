@@ -42,6 +42,7 @@ func (e *MyModel) PostGet(txn *Transaction) error {
 
 type mockCosmos struct {
 	ReturnX         int
+	ReturnUserId    string
 	ReturnEtag      string
 	ReturnSession   string
 	ReturnError     error
@@ -74,7 +75,7 @@ func (mock *mockCosmos) reset() {
 }
 
 func (mock *mockCosmos) GetDocument(ctx context.Context,
-	dbName, colName, id string, ops cosmosapi.GetDocumentOptions, out interface{}) error {
+	dbName, colName, id string, ops cosmosapi.GetDocumentOptions, out interface{}) (cosmosapi.DocumentResponse, error) {
 
 	mock.GotId = id
 	mock.GotMethod = "get"
@@ -84,7 +85,8 @@ func (mock *mockCosmos) GetDocument(ctx context.Context,
 	t.X = mock.ReturnX
 	t.BaseModel.Etag = mock.ReturnEtag
 	t.BaseModel.Id = id
-	return mock.ReturnError
+	t.UserId = mock.ReturnUserId
+	return cosmosapi.DocumentResponse{SessionToken: mock.ReturnSession}, mock.ReturnError
 }
 
 func (mock *mockCosmos) CreateDocument(ctx context.Context,
@@ -138,8 +140,8 @@ func (mockCosmosNotFound) ExecuteStoredProcedure(ctx context.Context, dbName, co
 	panic("implement me")
 }
 
-func (mockCosmosNotFound) GetDocument(ctx context.Context, dbName, colName, id string, ops cosmosapi.GetDocumentOptions, out interface{}) error {
-	return cosmosapi.ErrNotFound
+func (mockCosmosNotFound) GetDocument(ctx context.Context, dbName, colName, id string, ops cosmosapi.GetDocumentOptions, out interface{}) (cosmosapi.DocumentResponse, error) {
+	return cosmosapi.DocumentResponse{}, cosmosapi.ErrNotFound
 }
 
 func (mock *mockCosmosNotFound) DeleteCollection(ctx context.Context, dbName, colName string) error {
@@ -417,11 +419,13 @@ func TestTransactionGetExisting(t *testing.T) {
 
 		mock.ReturnEtag = "etag-1"
 		mock.ReturnError = nil
+		mock.ReturnUserId = "partitionvalue"
 		mock.ReturnX = 42
 		require.NoError(t, txn.Get("partitionvalue", "idvalue", &entity))
 		require.False(t, entity.IsNew())
 		require.Equal(t, "get", mock.GotMethod)
 		require.Equal(t, 42, entity.X)
+		require.Equal(t, "partitionvalue", entity.UserId)
 		require.Equal(t, 43, entity.XPlusOne) // PostGetHook called
 		return nil
 	}))
@@ -437,10 +441,12 @@ func TestTransactionNonExisting(t *testing.T) {
 
 	session := c.Session()
 
+	mock.ReturnError = cosmosapi.ErrNotFound
 	require.NoError(t, session.Transaction(func(txn *Transaction) error {
 		var entity MyModel
 		require.NoError(t, txn.Get("partitionValue", "idvalue", &entity))
 		require.True(t, entity.IsNew())
+		require.Equal(t, "partitionValue", entity.UserId)
 		return nil
 	}))
 	return
@@ -469,4 +475,64 @@ func TestTransactionRollback(t *testing.T) {
 	// no api call done due to rollback
 	require.Equal(t, "", mock.GotMethod)
 
+}
+
+func TestIdAsPartitionKey_GetEntityInfo(t *testing.T) {
+	c := Collection{
+		Client:       &mockCosmosNotFound{},
+		DbName:       "mydb",
+		Name:         "mycollection",
+		PartitionKey: "id",
+	}
+	e := MyModel{BaseModel: BaseModel{Id: "id1"}, UserId: "Alice"}
+	res, pkey := c.GetEntityInfo(&e)
+	require.Equal(t, "id1", res.Id)
+	require.Equal(t, "id1", pkey)
+}
+
+func TestIdAsPartitionKey_TransactionGetExisting(t *testing.T) {
+	mock := mockCosmos{}
+	c := Collection{
+		Client:       &mock,
+		DbName:       "mydb",
+		Name:         "mycollection",
+		PartitionKey: "id",
+	}
+
+	session := c.Session()
+
+	require.NoError(t, session.WithRetries(3).WithContext(context.Background()).Transaction(func(txn *Transaction) error {
+		var entity MyModel
+
+		mock.ReturnEtag = "etag-1"
+		mock.ReturnError = nil
+		mock.ReturnX = 42
+		require.NoError(t, txn.Get("idvalue", "idvalue", &entity))
+		require.False(t, entity.IsNew())
+		require.Equal(t, "get", mock.GotMethod)
+		require.Equal(t, "idvalue", entity.Id)
+		require.Equal(t, 42, entity.X)
+		require.Equal(t, 43, entity.XPlusOne) // PostGetHook called
+		return nil
+	}))
+}
+
+func TestIdAsPartitionKey_TransactionNonExisting(t *testing.T) {
+	mock := mockCosmos{}
+	c := Collection{
+		Client:       &mock,
+		DbName:       "mydb",
+		Name:         "mycollection",
+		PartitionKey: "userId"}
+
+	session := c.Session()
+
+	require.NoError(t, session.Transaction(func(txn *Transaction) error {
+		var entity MyModel
+		require.NoError(t, txn.Get("idvalue", "idvalue", &entity))
+		require.True(t, entity.IsNew())
+		require.Equal(t, "idvalue", entity.Id)
+		return nil
+	}))
+	return
 }

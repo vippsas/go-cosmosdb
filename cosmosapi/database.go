@@ -47,7 +47,7 @@ func (c *Client) GetDatabase(ctx context.Context, dbName string, ops *RequestOpt
 
 	db := &Database{}
 
-	err := c.get(ctx, createDatabaseLink(dbName), db, nil)
+	_, err := c.get(ctx, createDatabaseLink(dbName), db, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -56,5 +56,6 @@ func (c *Client) GetDatabase(ctx context.Context, dbName string, ops *RequestOpt
 }
 
 func (c *Client) DeleteDatabase(ctx context.Context, dbName string, ops *RequestOptions) error {
-	return c.delete(ctx, createDatabaseLink(dbName), nil)
+	_, err := c.delete(ctx, createDatabaseLink(dbName), nil)
+	return err
 }

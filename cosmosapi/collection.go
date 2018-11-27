@@ -127,7 +127,7 @@ func (c *Client) ListCollections(ctx context.Context, dbName string) (*DocumentC
 	url := createDatabaseLink(dbName) + "/colls"
 
 	docCol := &DocumentCollection{}
-	err := c.get(ctx, url, docCol, nil)
+	_, err := c.get(ctx, url, docCol, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -138,7 +138,7 @@ func (c *Client) ListCollections(ctx context.Context, dbName string) (*DocumentC
 func (c *Client) GetCollection(ctx context.Context, dbName, colName string) (*Collection, error) {
 	collection := &Collection{}
 	link := CreateCollLink(dbName, colName)
-	err := c.get(ctx, link, collection, nil)
+	_, err := c.get(ctx, link, collection, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -147,7 +147,8 @@ func (c *Client) GetCollection(ctx context.Context, dbName, colName string) (*Co
 }
 
 func (c *Client) DeleteCollection(ctx context.Context, dbName, colName string) error {
-	return c.delete(ctx, CreateCollLink(dbName, colName), nil)
+	_, err := c.delete(ctx, CreateCollLink(dbName, colName), nil)
+	return err
 }
 
 // https://docs.microsoft.com/en-us/rest/api/cosmos-db/replace-a-collection

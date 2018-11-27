@@ -120,13 +120,16 @@ func (txn *Transaction) Get(partitionValue interface{}, id string, target Model)
 		// do nothing, cacheGet already unserialized to target
 	} else {
 		// post-get hook will be done by Collection.get()
-		err = txn.session.Collection.get(
+		response, err := txn.session.Collection.get(
 			txn.session.Context,
 			partitionValue,
 			id,
 			target,
 			cosmosapi.ConsistencyLevelSession,
 			txn.session.Token())
+		if response.SessionToken != "" {
+			txn.session.state.sessionToken = response.SessionToken
+		}
 		if err == nil {
 			txn.session.cacheSet(partitionValue, id, target)
 		}

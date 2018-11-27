@@ -114,7 +114,7 @@ func (c *Client) ListDocument(ctx context.Context, link string,
 }
 
 type GetDocumentOptions struct {
-	IfNoneMatch       bool
+	IfNoneMatch       string
 	PartitionKeyValue interface{}
 	ConsistencyLevel  ConsistencyLevel
 	SessionToken      string
@@ -123,7 +123,7 @@ type GetDocumentOptions struct {
 func (ops GetDocumentOptions) AsHeaders() (map[string]string, error) {
 	headers := map[string]string{}
 
-	headers[HEADER_IF_NONE_MATCH] = strconv.FormatBool(ops.IfNoneMatch)
+	headers[HEADER_IF_NONE_MATCH] = ops.IfNoneMatch
 
 	if ops.PartitionKeyValue != nil {
 		v, err := MarshalPartitionKeyHeader(ops.PartitionKeyValue)
@@ -145,21 +145,19 @@ func (ops GetDocumentOptions) AsHeaders() (map[string]string, error) {
 }
 
 func (c *Client) GetDocument(ctx context.Context, dbName, colName, id string,
-	ops GetDocumentOptions, out interface{}) error {
-
+	ops GetDocumentOptions, out interface{}) (DocumentResponse, error) {
 	headers, err := ops.AsHeaders()
 	if err != nil {
-		return err
+		return DocumentResponse{}, err
 	}
 
 	link := createDocLink(dbName, colName, id)
 
-	err = c.get(ctx, link, out, headers)
+	resp, err := c.get(ctx, link, out, headers)
 	if err != nil {
-		return err
+		return DocumentResponse{}, err
 	}
-
-	return nil
+	return parseDocumentResponse(resp), nil
 }
 
 type ReplaceDocumentOptions struct {
@@ -168,15 +166,12 @@ type ReplaceDocumentOptions struct {
 	PreTriggersInclude  []string
 	PostTriggersInclude []string
 	IfMatch             string
-	IfNoneMatch         bool
 	ConsistencyLevel    ConsistencyLevel
 	SessionToken        string
 }
 
 func (ops ReplaceDocumentOptions) AsHeaders() (map[string]string, error) {
 	headers := map[string]string{}
-
-	headers[HEADER_IF_NONE_MATCH] = strconv.FormatBool(ops.IfNoneMatch)
 
 	if ops.PartitionKeyValue != nil {
 		v, err := MarshalPartitionKeyHeader(ops.PartitionKeyValue)
@@ -267,20 +262,20 @@ func (ops DeleteDocumentOptions) AsHeaders() (map[string]string, error) {
 	return headers, nil
 }
 
-func (c *Client) DeleteDocument(ctx context.Context, dbName, colName, id string, ops DeleteDocumentOptions) error {
+func (c *Client) DeleteDocument(ctx context.Context, dbName, colName, id string, ops DeleteDocumentOptions) (DocumentResponse, error) {
 	headers, err := ops.AsHeaders()
 	if err != nil {
-		return err
+		return DocumentResponse{}, err
 	}
 
 	link := createDocLink(dbName, colName, id)
 
-	err = c.delete(ctx, link, headers)
+	resp, err := c.delete(ctx, link, headers)
 	if err != nil {
-		return err
+		return DocumentResponse{}, err
 	}
 
-	return nil
+	return parseDocumentResponse(resp), nil
 }
 
 // QueryDocumentsOptions bundles all options supported by Cosmos DB when

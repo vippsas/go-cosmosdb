@@ -68,7 +68,7 @@ func (c *Client) ListTriggers(ctx context.Context, dbName string, colName string
 	url := CreateCollLink(dbName, colName) + "/triggers"
 
 	colTrigs := &CollectionTriggers{}
-	err := c.get(ctx, url, colTrigs, nil)
+	_, err := c.get(ctx, url, colTrigs, nil)
 	if err != nil {
 		return nil, err
 	}

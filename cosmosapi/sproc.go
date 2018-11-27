@@ -48,14 +48,15 @@ func (c *Client) ReplaceStoredProcedure(
 }
 
 func (c *Client) DeleteStoredProcedure(ctx context.Context, dbName, colName, sprocName string) error {
-	return c.delete(ctx, createSprocLink(dbName, colName, sprocName), nil)
+	_, err := c.delete(ctx, createSprocLink(dbName, colName, sprocName), nil)
+	return err
 }
 
 func (c *Client) GetStoredProcedure(ctx context.Context, dbName, colName, sprocName string) (*StoredProcedure, error) {
 	ret := &StoredProcedure{}
 	link := createSprocLink(dbName, colName, sprocName)
 
-	err := c.get(ctx, link, ret, nil)
+	_, err := c.get(ctx, link, ret, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -66,7 +67,7 @@ func (c *Client) ListStoredProcedures(ctx context.Context, dbName, colName strin
 	ret := &StoredProcedures{}
 	link := createSprocsLink(dbName, colName)
 
-	err := c.get(ctx, link, ret, nil)
+	_, err := c.get(ctx, link, ret, nil)
 	if err != nil {
 		return nil, err
 	}
