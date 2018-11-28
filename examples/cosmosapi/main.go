@@ -164,7 +164,7 @@ func main() {
 		err = errors.WithStack(err)
 		fmt.Println(err)
 	}
-	//fmt.Printf("type of Documents: kind: %s", reflect.TypeOf
+	// fmt.Printf("type of Documents: kind: %s", reflect.TypeOf
 
 	fmt.Printf("Query results: %+v\n", res)
 	fmt.Printf("Query results: %+v\n", res.Documents)
@@ -175,7 +175,7 @@ func main() {
 	do := cosmosapi.DeleteDocumentOptions{
 		PartitionKeyValue: "asdf",
 	}
-	err = client.DeleteDocument(context.Background(), cfg.DbName, "invoices", "aaa", do)
+	_, err = client.DeleteDocument(context.Background(), cfg.DbName, "invoices", "aaa", do)
 	if err != nil {
 		err = errors.WithStack(err)
 		fmt.Println(err)
