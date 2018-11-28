@@ -64,7 +64,7 @@ func main() {
 
 // Panic with format
 func panicf(f string, a ...interface{}) {
-	panic(fmt.Sprintf(f, a))
+	panic(fmt.Sprintf(f, a...))
 }
 
 // Panic with error and format
