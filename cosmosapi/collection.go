@@ -62,7 +62,8 @@ type CollectionCreateOptions struct {
 	// RTUs [400 - 250000]. Do not use in combination with OfferType
 	OfferThroughput OfferThroughput `json:"offerThroughput,omitempty"`
 	// S1,S2,S3. Do not use in combination with OfferThroughput
-	OfferType OfferType `json:"offerType,omitempty"`
+	OfferType         OfferType `json:"offerType,omitempty"`
+	DefaultTimeToLive int       `json:"defaultTtl,omitempty"`
 }
 
 func (colOps CollectionCreateOptions) AsHeaders() (map[string]string, error) {
@@ -85,9 +86,10 @@ func (colOps CollectionCreateOptions) AsHeaders() (map[string]string, error) {
 
 type CollectionReplaceOptions struct {
 	Resource
-	Id             string          `json:"id"`
-	IndexingPolicy *IndexingPolicy `json:"indexingPolicy,omitempty"`
-	PartitionKey   *PartitionKey   `json:"partitionKey,omitempty"`
+	Id                string          `json:"id"`
+	IndexingPolicy    *IndexingPolicy `json:"indexingPolicy,omitempty"`
+	PartitionKey      *PartitionKey   `json:"partitionKey,omitempty"`
+	DefaultTimeToLive int             `json:"defaultTtl,omitempty"`
 }
 
 // https://docs.microsoft.com/en-us/rest/api/cosmos-db/create-a-collection
