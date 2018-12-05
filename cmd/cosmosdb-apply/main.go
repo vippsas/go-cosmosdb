@@ -5,14 +5,12 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
+	"github.com/vippsas/go-cosmosdb/cosmosapi"
 	"io/ioutil"
+	"log"
 	"os"
 	"path/filepath"
 	"strings"
-
-	"log"
-
-	"github.com/vippsas/go-cosmosdb/cosmosapi"
 )
 
 const (
@@ -54,9 +52,9 @@ func main() {
 	client := newCosmosDbClient(masterKey)
 
 	for i, def := range collectionDefinitions {
-		fmt.Printf("[%d/%d] Processing collection '%s'\n", i+1, len(collectionDefinitions), def.CollectionID)
+		fmt.Printf("[%d/%d] Processing collection definition '%s'\n", i+1, len(collectionDefinitions), def.CollectionID)
 		handleCollectionDefinition(def, client)
-		fmt.Printf("[%d/%d] Finished processing collection '%s'\n", i+1, len(collectionDefinitions), def.CollectionID)
+		fmt.Printf("[%d/%d] Finished processing collection definition '%s'\n", i+1, len(collectionDefinitions), def.CollectionID)
 	}
 }
 
@@ -170,6 +168,18 @@ func handleCollectionDefinition(def collectionDefinition, client *cosmosapi.Clie
 	// (3. Removed. Not in definition, but among existing collections.)
 
 	ensureDatabaseExists(client, def)
+	if def.Count > 1 {
+		collectionIdBase := def.CollectionID
+		for i := 1; i <= def.Count; i++ {
+			def.CollectionID = fmt.Sprintf("%s-%d", collectionIdBase, i)
+			fmt.Println("Create or replace collection ", def.CollectionID)
+			createOrReplaceCollection(def, client)
+		}
+	}
+	createOrReplaceCollection(def, client)
+}
+
+func createOrReplaceCollection(def collectionDefinition, client *cosmosapi.Client) {
 	dbCol, colFound := getCollection(client, def)
 
 	if !colFound {
@@ -219,11 +229,12 @@ func getCollection(client *cosmosapi.Client, def collectionDefinition) (*cosmosa
 
 func createCollection(def collectionDefinition, client *cosmosapi.Client) {
 	colCreateOpts := cosmosapi.CollectionCreateOptions{
-		Id:              def.CollectionID,
-		IndexingPolicy:  def.IndexingPolicy,
-		PartitionKey:    def.PartitionKey,
-		OfferType:       cosmosapi.OfferType(def.Offer.Type),
-		OfferThroughput: cosmosapi.OfferThroughput(def.Offer.Throughput),
+		Id:                def.CollectionID,
+		IndexingPolicy:    def.IndexingPolicy,
+		PartitionKey:      def.PartitionKey,
+		DefaultTimeToLive: def.DefaultTimeToLive,
+		OfferType:         cosmosapi.OfferType(def.Offer.Type),
+		OfferThroughput:   cosmosapi.OfferThroughput(def.Offer.Throughput),
 	}
 
 	_, err := client.CreateCollection(context.Background(), def.DatabaseID, colCreateOpts)
@@ -236,9 +247,10 @@ func createCollection(def collectionDefinition, client *cosmosapi.Client) {
 
 func replaceCollection(def collectionDefinition, existingCol *cosmosapi.Collection, client *cosmosapi.Client) {
 	colReplaceOpts := cosmosapi.CollectionReplaceOptions{
-		Id:             def.CollectionID,
-		IndexingPolicy: def.IndexingPolicy,
-		PartitionKey:   existingCol.PartitionKey,
+		Id:                def.CollectionID,
+		IndexingPolicy:    def.IndexingPolicy,
+		PartitionKey:      existingCol.PartitionKey,
+		DefaultTimeToLive: def.DefaultTimeToLive,
 	}
 
 	updatedCol, err := client.ReplaceCollection(context.Background(), def.DatabaseID, colReplaceOpts)
@@ -354,10 +366,12 @@ func replaceOffers(def collectionDefinition, dbCol *cosmosapi.Collection, client
 // --- Inline types used to deserialize the input
 
 type collectionDefinition struct {
-	FilePath     string
-	DatabaseID   string `json:"databaseId"`
-	CollectionID string `json:"collectionId"`
-	Offer        struct {
+	FilePath          string
+	DatabaseID        string `json:"databaseId"`
+	Count             int    `json:"count"`
+	CollectionID      string `json:"collectionId"`
+	DefaultTimeToLive int    `json:"defaultTtl"`
+	Offer             struct {
 		Throughput int    `json:"throughput"`
 		Type       string `json:"type"`
 	} `json:"offer"`
