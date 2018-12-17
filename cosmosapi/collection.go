@@ -167,8 +167,3 @@ func (c *Client) ReplaceCollection(ctx context.Context, dbName string,
 
 	return collection, nil
 }
-
-// TODO: add model for partition key ranges
-func (c *Client) GetPartitionKeyRanges(ctx context.Context, dbName, colName string) error {
-	return ErrorNotImplemented
-}
