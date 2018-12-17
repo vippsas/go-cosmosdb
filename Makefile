@@ -5,5 +5,5 @@ example:
 test:
 	go build cmd/cosmosdb-apply/main.go
 	go test -v `go list ./cosmosapi`
-	go test -v `go list ./cosmos`
+	go test -tags=offline -v `go list ./cosmos`
 	go test -v `go list ./cosmostest`

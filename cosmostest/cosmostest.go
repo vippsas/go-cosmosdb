@@ -51,6 +51,9 @@ func check(err error, message string) {
 // Factory for constructing the underlying, proper cosmosapi.Client given configuration.
 // This is typically called by / wrapped by the test collection providers.
 func RawClient(cfg Config) *cosmosapi.Client {
+	if cfg.Uri == "" {
+		panic("Missing requred parameter 'Uri'")
+	}
 	var caRoots *x509.CertPool
 	if cfg.TlsCertificate != "" {
 		caRoots = x509.NewCertPool()
