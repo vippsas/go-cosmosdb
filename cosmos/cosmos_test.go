@@ -128,6 +128,23 @@ func (mock *mockCosmos) ReplaceDocument(ctx context.Context,
 	return &newBase, cosmosapi.DocumentResponse{SessionToken: mock.ReturnSession}, mock.ReturnError
 }
 
+func (mock *mockCosmos) ListDocuments(
+	ctx context.Context,
+	databaseName, collectionName string,
+	options *cosmosapi.ListDocumentsOptions,
+	documentList interface{},
+) (response cosmosapi.ListDocumentsResponse, err error) {
+	panic("implement me")
+}
+
+func (mock *mockCosmos) GetPartitionKeyRanges(
+	ctx context.Context,
+	databaseName, collectionName string,
+	options *cosmosapi.GetPartitionKeyRangesOptions,
+) (response cosmosapi.GetPartitionKeyRangesResponse, err error) {
+	panic("implement me")
+}
+
 type mockCosmosNotFound struct {
 	mockCosmos
 }
@@ -149,6 +166,23 @@ func (mock *mockCosmosNotFound) DeleteCollection(ctx context.Context, dbName, co
 }
 
 func (mock *mockCosmosNotFound) DeleteDatabase(ctx context.Context, dbName string, ops *cosmosapi.RequestOptions) error {
+	panic("implement me")
+}
+
+func (mock *mockCosmosNotFound) ListDocuments(
+	ctx context.Context,
+	databaseName, collectionName string,
+	options *cosmosapi.ListDocumentsOptions,
+	documentList interface{},
+) (response cosmosapi.ListDocumentsResponse, err error) {
+	panic("implement me")
+}
+
+func (mock *mockCosmosNotFound) GetPartitionKeyRanges(
+	ctx context.Context,
+	databaseName, collectionName string,
+	options *cosmosapi.GetPartitionKeyRangesOptions,
+) (response cosmosapi.GetPartitionKeyRangesResponse, err error) {
 	panic("implement me")
 }
 

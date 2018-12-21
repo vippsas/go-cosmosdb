@@ -26,11 +26,18 @@ func (c *Client) ListDocuments(
 		return response, err
 	} else if httpResponse.StatusCode == http.StatusNotModified {
 		return response, err
-	} else if err = json.Unmarshal(responseBody.Documents, documentList); err != nil {
+	} else if err = unmarshalDocuments(responseBody.Documents, documentList); err != nil {
 		return response, err
 	}
 	r, err := response.parse(httpResponse)
 	return *r, err
+}
+
+func unmarshalDocuments(bytes []byte, documentList interface{}) error {
+	if len(bytes) == 0 {
+		return nil
+	}
+	return json.Unmarshal(bytes, documentList)
 }
 
 type listDocumentsResponseBody struct {
