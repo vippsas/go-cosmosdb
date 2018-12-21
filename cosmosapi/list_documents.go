@@ -37,7 +37,7 @@ func unmarshalDocuments(bytes []byte, documentList interface{}) error {
 	if len(bytes) == 0 {
 		return nil
 	}
-	return json.Unmarshal(bytes, documentList)
+	return errors.WithStack(json.Unmarshal(bytes, documentList))
 }
 
 type listDocumentsResponseBody struct {
