@@ -186,7 +186,7 @@ func (c Collection) ExecuteSproc(sprocName string, partitionKeyValue interface{}
 		c.GetContext(), c.DbName, c.Name, sprocName, opts, ret, args...)
 }
 
-func (c Collection) ReadFeed(etag, partitionKeyRangeId string, maxItems int, documents interface{}) (string, error) {
+func (c Collection) ReadFeed(etag, partitionKeyRangeId string, maxItems int, documents interface{}) (cosmosapi.ListDocumentsResponse, error) {
 	ops := cosmosapi.ListDocumentsOptions{
 		MaxItemCount:        maxItems,
 		AIM:                 "Incremental feed",
@@ -194,7 +194,7 @@ func (c Collection) ReadFeed(etag, partitionKeyRangeId string, maxItems int, doc
 		IfNoneMatch:         etag,
 	}
 	response, err := c.Client.ListDocuments(c.GetContext(), c.DbName, c.Name, &ops, documents)
-	return response.Etag, err
+	return response, err
 }
 
 func (c Collection) GetPartitionKeyRanges() ([]cosmosapi.PartitionKeyRange, error) {

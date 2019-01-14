@@ -69,13 +69,13 @@ func (s *scenario) readFeed(maxItemsPerPartionRange int) []Document {
 	var allChanges []Document
 	for partitionKeyRangeId, etag := range s.etags {
 		var changesInPartitionRange []Document
-		newEtag, err := collection.ReadFeed(etag, partitionKeyRangeId, maxItemsPerPartionRange, &changesInPartitionRange)
+		response, err := collection.ReadFeed(etag, partitionKeyRangeId, maxItemsPerPartionRange, &changesInPartitionRange)
 		assert.NoError(s.t, err)
 		fmt.Printf("Found %d document(s) in partition range <%s>:\n", len(changesInPartitionRange), partitionKeyRangeId)
 		for _, doc := range changesInPartitionRange {
 			fmt.Println(" ", doc)
 		}
-		s.etags[partitionKeyRangeId] = newEtag
+		s.etags[partitionKeyRangeId] = response.Etag
 		allChanges = append(allChanges, changesInPartitionRange...)
 	}
 	return allChanges
