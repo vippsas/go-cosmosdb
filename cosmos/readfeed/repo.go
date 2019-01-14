@@ -1,13 +1,33 @@
 package readfeed
 
 import (
+	"fmt"
 	"github.com/vippsas/go-cosmosdb/cosmos"
 )
 
+type Document struct {
+	cosmos.BaseModel
+	Model        string `json:"model" cosmosmodel:"Document/0"`
+	PartitionKey string `json:"partitionkey"`
+	Text         string `json:"text"`
+}
+
+func (d Document) String() string {
+	return fmt.Sprintf("Id=%s PartitionKey=%s Text=%s", d.Id, d.PartitionKey, d.Text)
+}
+
+func (*Document) PostGet(txn *cosmos.Transaction) error {
+	return nil
+}
+
+func (*Document) PrePut(txn *cosmos.Transaction) error {
+	return nil
+}
+
 type DocumentRepo interface {
 	GetOrCreate(toCreate *Document) (Document *Document, created bool, err error)
-	Get(payerId string, id string) (*Document, error)
-	Update(payerId string, id string, update func(Document *Document) error) (Document *Document, err error)
+	Get(partitionKey string, id string) (*Document, error)
+	Update(partitionKey string, id string, update func(Document *Document) error) (Document *Document, err error)
 }
 
 type DocumentCosmosRepo struct {
@@ -28,7 +48,7 @@ func (r DocumentCosmosRepo) GetOrCreate(toCreate *Document) (ret *Document, crea
 	ret = &Document{}
 	err = r.Session().Transaction(func(txn *cosmos.Transaction) error {
 		var err error
-		err = txn.Get(toCreate.PayerId, toCreate.Id, ret)
+		err = txn.Get(toCreate.PartitionKey, toCreate.Id, ret)
 		if err != nil {
 			return err
 		}
@@ -43,26 +63,26 @@ func (r DocumentCosmosRepo) GetOrCreate(toCreate *Document) (ret *Document, crea
 	return
 }
 
-func (r DocumentCosmosRepo) Get(payerId string, id string) (*Document, error) {
+func (r DocumentCosmosRepo) Get(partitionKey string, id string) (*Document, error) {
 	Document := &Document{}
 	err := r.Session().Transaction(func(txn *cosmos.Transaction) error {
-		err := txn.Get(payerId, id, Document)
+		err := txn.Get(partitionKey, id, Document)
 		return err
 	})
 	return Document, err
 }
 
-func (r DocumentCosmosRepo) Update(payerId string, id string, update func(*Document) error) (Document *Document, err error) {
+func (r DocumentCosmosRepo) Update(partitionKey string, id string, update func(*Document) error) (document *Document, err error) {
 	err = r.Session().Transaction(func(txn *cosmos.Transaction) error {
 		p := &Document{}
-		if err := txn.Get(payerId, id, p); err != nil {
+		if err := txn.Get(partitionKey, id, p); err != nil {
 			return err
 		}
 		if err := update(p); err != nil {
 			return err
 		}
 		txn.Put(p)
-		Document = p
+		document = p
 		return nil
 	})
 	return

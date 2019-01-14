@@ -212,5 +212,8 @@ func (c Client) handleResponse(ctx context.Context, req *http.Request, resp *htt
 	if ret == nil {
 		return nil
 	}
+	if resp.ContentLength == 0 {
+		return nil
+	}
 	return readJson(resp.Body, ret)
 }

@@ -161,8 +161,8 @@ func (c Collection) put(ctx context.Context, entityPtr Model, base BaseModel, pa
 	return
 }
 
-// PutInconsistent simply does a raw write of document passed in without any considerations about races
-// or consistency. An "upsert" will be performed without any Etag checks. `doc` should be a pointer to the struct
+// RacingPut simply does a raw write of document passed in without any considerations about races
+// or consistency. An "upsert" will be performed without any Etag checks. `entityPtr` should be a pointer to the struct
 func (c Collection) RacingPut(entityPtr Model) error {
 	base, partitionValue := c.GetEntityInfo(entityPtr)
 
@@ -184,4 +184,21 @@ func (c Collection) ExecuteSproc(sprocName string, partitionKeyValue interface{}
 	opts := cosmosapi.ExecuteStoredProcedureOptions{PartitionKeyValue: partitionKeyValue}
 	return c.Client.ExecuteStoredProcedure(
 		c.GetContext(), c.DbName, c.Name, sprocName, opts, ret, args...)
+}
+
+func (c Collection) ReadFeed(etag, partitionKeyRangeId string, maxItems int, documents interface{}) (string, error) {
+	ops := cosmosapi.ListDocumentsOptions{
+		MaxItemCount:        maxItems,
+		AIM:                 "Incremental feed",
+		PartitionKeyRangeId: partitionKeyRangeId,
+		IfNoneMatch:         etag,
+	}
+	response, err := c.Client.ListDocuments(c.GetContext(), c.DbName, c.Name, &ops, documents)
+	return response.Etag, err
+}
+
+func (c Collection) GetPartitionKeyRanges() ([]cosmosapi.PartitionKeyRange, error) {
+	ops := cosmosapi.GetPartitionKeyRangesOptions{}
+	response, err := c.Client.GetPartitionKeyRanges(c.GetContext(), c.DbName, c.Name, &ops)
+	return response.PartitionKeyRanges, err
 }

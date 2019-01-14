@@ -105,14 +105,6 @@ func (c *Client) UpsertDocument(ctx context.Context, link string,
 	return ErrorNotImplemented
 }
 
-// ListDocument reads either all documents or the incremental feed, aka.
-// change feed.
-// TODO: probably have to return continuation token for the feed
-func (c *Client) ListDocument(ctx context.Context, link string,
-	ops *RequestOptions, out interface{}) error {
-	return ErrorNotImplemented
-}
-
 type GetDocumentOptions struct {
 	IfNoneMatch       string
 	PartitionKeyValue interface{}

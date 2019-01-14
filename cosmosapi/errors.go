@@ -37,6 +37,7 @@ var (
 		http.StatusOK:                    nil,
 		http.StatusCreated:               nil,
 		http.StatusNoContent:             nil,
+		http.StatusNotModified:           nil,
 		http.StatusBadRequest:            ErrInvalidRequest,
 		http.StatusUnauthorized:          ErrUnautorized,
 		http.StatusForbidden:             ErrForbidden,

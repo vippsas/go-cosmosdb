@@ -19,12 +19,12 @@ import (
 	"context"
 	"crypto/tls"
 	"crypto/x509"
-	"net/http"
-
+	"fmt"
 	"github.com/gofrs/uuid"
 	"github.com/pkg/errors"
 	"github.com/vippsas/go-cosmosdb/cosmos"
 	"github.com/vippsas/go-cosmosdb/cosmosapi"
+	"net/http"
 )
 
 type Config struct {
@@ -76,6 +76,30 @@ func RawClient(cfg Config) *cosmosapi.Client {
 		MasterKey:  cfg.MasterKey,
 		MaxRetries: 3,
 	}, httpClient, nil)
+}
+
+func SetupUniqueCollectionWithExistingDatabaseAndDefaultThroughput(log cosmos.Logger, cfg Config, id, partitionKey string) cosmos.Collection {
+	id = uuid.Must(uuid.NewV4()).String() + "-" + id
+	log.Printf("Creating Cosmos collection %s/%s\n", cfg.DbName, id)
+	client := RawClient(cfg)
+	_, err := client.CreateCollection(context.Background(), cfg.DbName, cosmosapi.CollectionCreateOptions{
+		Id: id,
+		PartitionKey: &cosmosapi.PartitionKey{
+			Paths: []string{"/" + partitionKey},
+			Kind:  "Hash",
+		},
+	})
+	if err != nil {
+		panic(fmt.Sprintf("Failed to create Cosmos collection %s in database %s\n: %+v", id, cfg.DbName, err))
+	}
+	return cosmos.Collection{
+		Client:       client,
+		DbName:       cfg.DbName,
+		Name:         id,
+		PartitionKey: partitionKey,
+		Log:          log,
+		Context:      context.Background(),
+	}
 }
 
 func SetupCollection(log cosmos.Logger, cfg Config, collectionId, partitionKey string) cosmos.Collection {

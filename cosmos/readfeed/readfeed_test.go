@@ -14,60 +14,119 @@ import (
 	"testing"
 )
 
-var fixture cosmos.Collection
+var collection cosmos.Collection
 
 func TestMain(m *testing.M) {
 	config := LoadCosmosConfiguration()
-	fixture = cosmos.Collection{
-		Client:       cosmostest.RawClient(config),
-		DbName:       "feedtest",
-		Name:         "feedtest-1",
-		PartitionKey: "partitionkey",
-		Log:          log.New(os.Stdout, "", 0),
-	}
+	collection = cosmostest.SetupUniqueCollectionWithExistingDatabaseAndDefaultThroughput(log.New(os.Stdout, "", 0), config, "feedtest", "partitionkey")
 	retCode := m.Run()
+	cosmostest.TeardownCollection(collection)
 	os.Exit(retCode)
 }
 
-func Test_WhenDocumentIsInsertedThenChangeAppearsOnFeed(t *testing.T) {
-	err := fixture.RacingPut(aDocument())
-	assert.NoError(t, err)
+func Test_WhenDocumentsAreInsertedOrUpdatedThenChangeAppearsOnFeed(t *testing.T) {
+	givenScenario(t).
+		whenDocumentIsInserted(aDocument("1", "a", "abc")).
+		thenFeedHasCorrespondingChanges().
+		whenDocumentsAreInserted(aDocument("2", "SAasdasd", "sdf"), aDocument("3", "23csfdzadf", "dsf")).
+		thenFeedHasCorrespondingChanges().
+		whenDocumentIsUpdated("1", "a", "cba").
+		thenFeedHasCorrespondingChanges()
 }
 
-func aDocument() *Document {
-	toCreate := &Document{}
-	ret := &Document{}
-	err := fixture.Session().Transaction(func(txn *cosmos.Transaction) error {
-		var err error
-		err = txn.Get(toCreate.PartitionKey, toCreate.Id, ret)
-		if err != nil {
-			return err
+type scenario struct {
+	t         *testing.T
+	etags     map[string]string
+	documents []Document
+}
+
+func givenScenario(t *testing.T) *scenario {
+	scenario := scenario{t: t}
+	return &scenario
+}
+
+func (s *scenario) getPartitionKeyRangeIds() (ids []string) {
+	currentRanges, err := collection.GetPartitionKeyRanges()
+	assert.NoError(s.t, err)
+	for _, r := range currentRanges {
+		ids = append(ids, r.Id)
+	}
+	return ids
+}
+
+func (s *scenario) refreshPartitionKeyRanges() *scenario {
+	currentRangeIds := s.getPartitionKeyRangeIds()
+	refreshedEtags := make(map[string]string)
+	for _, currentRangeId := range currentRangeIds {
+		refreshedEtags[currentRangeId] = s.etags[currentRangeId]
+		delete(s.etags, currentRangeId)
+	}
+	s.etags = refreshedEtags
+	return s
+}
+
+func (s *scenario) readFeed(maxItemsPerPartionRange int) []Document {
+	var allChanges []Document
+	for partitionKeyRangeId, etag := range s.etags {
+		var changesInPartitionRange []Document
+		newEtag, err := collection.ReadFeed(etag, partitionKeyRangeId, maxItemsPerPartionRange, &changesInPartitionRange)
+		assert.NoError(s.t, err)
+		fmt.Printf("Found %d document(s) in partition range <%s>:\n", len(changesInPartitionRange), partitionKeyRangeId)
+		for _, doc := range changesInPartitionRange {
+			fmt.Println(" ", doc)
 		}
-		if !ret.IsNew() {
-			return nil
-		}
-		ret = toCreate
-		txn.Put(ret)
+		s.etags[partitionKeyRangeId] = newEtag
+		allChanges = append(allChanges, changesInPartitionRange...)
+	}
+	return allChanges
+}
+
+func (s *scenario) thenFeedHasCorrespondingChanges() *scenario {
+	s.refreshPartitionKeyRanges()
+	changes := s.readFeed(len(s.documents))
+	assert.Equal(s.t, len(s.documents), len(changes), "Expected %d documents on feed but found %d", len(s.documents), len(changes))
+	for i, insertedDocument := range s.documents {
+		s.assertEqualDocuments(insertedDocument, changes[i])
+	}
+	s.documents = nil
+	return s
+}
+
+func (s *scenario) assertEqualDocuments(document1, document2 Document) {
+	assert.Equal(s.t, document1.Id, document2.Id)
+	assert.Equal(s.t, document1.PartitionKey, document2.PartitionKey)
+}
+
+func (s *scenario) whenDocumentIsInserted(document Document) *scenario {
+	_, fresh, err := DocumentCosmosRepo{Collection: collection}.GetOrCreate(&document)
+	assert.NoError(s.t, err)
+	assert.True(s.t, fresh)
+	fmt.Printf("Inserted document %s\n", document.String())
+	s.documents = append(s.documents, document)
+	return s
+}
+
+func (s *scenario) whenDocumentsAreInserted(documents ...Document) *scenario {
+	for _, document := range documents {
+		s.whenDocumentIsInserted(document)
+	}
+	return s
+}
+
+func (s *scenario) whenDocumentIsUpdated(id string, partitionKey string, text string) *scenario {
+	document, err := DocumentCosmosRepo{Collection: collection}.Update(partitionKey, id, func(d *Document) error {
+		d.Text = text
 		return nil
 	})
-	if err != nil {
-		panic(err)
-	}
-	return ret
+	assert.NoError(s.t, err)
+	assert.Equal(s.t, text, document.Text)
+	fmt.Printf("Updated document %s\n", document.String())
+	s.documents = append(s.documents, *document)
+	return s
 }
 
-type Document struct {
-	cosmos.BaseModel
-	Model        string `json:"model" cosmosmodel:"Document/0"`
-	PartitionKey string `json:"partitionkey"`
-}
-
-func (*Document) PostGet(txn *cosmos.Transaction) error {
-	return nil
-}
-
-func (*Document) PrePut(txn *cosmos.Transaction) error {
-	return nil
+func aDocument(id, partitionKey string, text string) Document {
+	return Document{BaseModel: cosmos.BaseModel{Id: id}, PartitionKey: partitionKey, Text: text}
 }
 
 func LoadCosmosConfiguration() cosmostest.Config {
@@ -79,6 +138,9 @@ func LoadCosmosConfiguration() cosmostest.Config {
 	} else if err = yaml.NewDecoder(configfile).Decode(&configDoc); err != nil {
 		panic(fmt.Sprintf("Failed to parse test configuration: %v", err))
 	} else {
+		if configDoc.CosmosTest.DbName == "" {
+			configDoc.CosmosTest.DbName = "default"
+		}
 		return configDoc.CosmosTest
 	}
 }
