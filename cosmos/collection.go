@@ -161,8 +161,8 @@ func (c Collection) put(ctx context.Context, entityPtr Model, base BaseModel, pa
 	return
 }
 
-// PutInconsistent simply does a raw write of document passed in without any considerations about races
-// or consistency. An "upsert" will be performed without any Etag checks. `doc` should be a pointer to the struct
+// RacingPut simply does a raw write of document passed in without any considerations about races
+// or consistency. An "upsert" will be performed without any Etag checks. `entityPtr` should be a pointer to the struct
 func (c Collection) RacingPut(entityPtr Model) error {
 	base, partitionValue := c.GetEntityInfo(entityPtr)
 
@@ -184,4 +184,29 @@ func (c Collection) ExecuteSproc(sprocName string, partitionKeyValue interface{}
 	opts := cosmosapi.ExecuteStoredProcedureOptions{PartitionKeyValue: partitionKeyValue}
 	return c.Client.ExecuteStoredProcedure(
 		c.GetContext(), c.DbName, c.Name, sprocName, opts, ret, args...)
+}
+
+// Retrieve <maxItems> documents that have changed within the partition key range since <etag>. Note that according to
+// https://docs.microsoft.com/en-us/rest/api/cosmos-db/list-documents (as of Jan 14 16:30:27 UTC 2019) <maxItems>, which
+// corresponds to the x-ms-max-item-count HTTP request header, is (quote):
+//
+// "An integer indicating the maximum number of items to be returned per page."
+//
+// However incremental feed reads seems to always return maximum one page, ie. the continuation token (x-ms-continuation
+// HTTP response header) is always empty.
+func (c Collection) ReadFeed(etag, partitionKeyRangeId string, maxItems int, documents interface{}) (cosmosapi.ListDocumentsResponse, error) {
+	ops := cosmosapi.ListDocumentsOptions{
+		MaxItemCount:        maxItems,
+		AIM:                 "Incremental feed",
+		PartitionKeyRangeId: partitionKeyRangeId,
+		IfNoneMatch:         etag,
+	}
+	response, err := c.Client.ListDocuments(c.GetContext(), c.DbName, c.Name, &ops, documents)
+	return response, err
+}
+
+func (c Collection) GetPartitionKeyRanges() ([]cosmosapi.PartitionKeyRange, error) {
+	ops := cosmosapi.GetPartitionKeyRangesOptions{}
+	response, err := c.Client.GetPartitionKeyRanges(c.GetContext(), c.DbName, c.Name, &ops)
+	return response.PartitionKeyRanges, err
 }
