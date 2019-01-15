@@ -186,6 +186,14 @@ func (c Collection) ExecuteSproc(sprocName string, partitionKeyValue interface{}
 		c.GetContext(), c.DbName, c.Name, sprocName, opts, ret, args...)
 }
 
+// Retrieve <maxItems> documents that have changed within the partition key range since <etag>. Note that according to
+// https://docs.microsoft.com/en-us/rest/api/cosmos-db/list-documents (as of Jan 14 16:30:27 UTC 2019) <maxItems>, which
+// corresponds to the x-ms-max-item-count HTTP request header, is (quote):
+//
+// "An integer indicating the maximum number of items to be returned per page."
+//
+// However incremental feed reads seems to always return maximum one page, ie. the continuation token (x-ms-continuation
+// HTTP response header) is always empty.
 func (c Collection) ReadFeed(etag, partitionKeyRangeId string, maxItems int, documents interface{}) (cosmosapi.ListDocumentsResponse, error) {
 	ops := cosmosapi.ListDocumentsOptions{
 		MaxItemCount:        maxItems,
