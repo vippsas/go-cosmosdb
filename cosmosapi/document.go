@@ -317,7 +317,25 @@ func (ops QueryDocumentsOptions) AsHeaders() (map[string]string, error) {
 		headers[HEADER_CONTYPE] = ops.ContentType
 	}
 
-	// TODO: Add missing headers
+	if ops.MaxItemCount != 0 {
+		headers[HEADER_MAX_ITEM_COUNT] = strconv.Itoa(ops.MaxItemCount)
+	}
+
+	if ops.Continuation != "" {
+		headers[HEADER_CONTINUATION] = ops.Continuation
+	}
+
+	if ops.EnableCrossPartition == true {
+		headers[HEADER_CROSSPARTITION] = strconv.FormatBool(ops.EnableCrossPartition)
+	}
+
+	if ops.ConsistencyLevel != "" {
+		headers[HEADER_CONSISTENCY_LEVEL] = string(ops.ConsistencyLevel)
+	}
+
+	if ops.SessionToken != "" {
+		headers[HEADER_SESSION_TOKEN] = ops.SessionToken
+	}
 
 	return headers, nil
 }
