@@ -84,6 +84,9 @@ func backoffDelay(retryCount int) time.Duration {
 
 // Generate link
 func path(url string, args ...string) (link string) {
+	if len(args) == 0 {
+		return url
+	}
 	args = append([]string{url}, args...)
 	link = strings.Join(args, "/")
 	return

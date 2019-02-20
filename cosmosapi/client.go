@@ -120,6 +120,38 @@ func (c *Client) method(ctx context.Context, method, link string, ret interface{
 	return c.do(ctx, req, ret)
 }
 
+func (c *Client) rawMethod(ctx context.Context, method, url string, ret interface{}, body io.Reader, headers map[string]string) (*http.Response, error) {
+	req, err := http.NewRequest(method, path(c.Url, url), body)
+	if err != nil {
+		c.Log.Errorln(err)
+		return nil, err
+	}
+	c.Log.Debugf("Will call: %s\n", req.URL)
+	//r := ResourceRequest(link, req)
+
+	defaultHeaders, err := defaultHeaders(method, strings.Replace(url, c.Url, "", 1), c.Config.MasterKey)
+	if err != nil {
+		c.Log.Debug(err)
+		return nil, err
+	}
+
+	if headers == nil {
+		headers = map[string]string{}
+	}
+	for k, v := range defaultHeaders {
+		// insert if not already present
+		headers[k] = v
+	}
+
+	for k, v := range headers {
+		req.Header.Add(k, v)
+	}
+
+	c.Log.Debugf("Headers: %s\n", req.Header)
+
+	return c.do(ctx, req, ret)
+}
+
 func retriable(code int) bool {
 	return code == http.StatusTooManyRequests || code == http.StatusServiceUnavailable
 }
@@ -182,6 +214,8 @@ func (c *Client) do(ctx context.Context, r *http.Request, data interface{}) (*ht
 		r.Body = ioutil.NopCloser(bytes.NewReader(b))
 		c.Log.Debugln("Executing request")
 		resp, err = cli.Do(r)
+		fmt.Println("GFOOOOF")
+		fmt.Println(resp.Header)
 		if err != nil {
 			return nil, err
 		}
