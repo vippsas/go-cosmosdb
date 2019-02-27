@@ -136,6 +136,7 @@ func (e RequestError) Error() string {
 }
 
 func (c *Client) checkResponse(resp *http.Response) error {
+	c.Log.Debugf("Got response code: %d", resp.StatusCode)
 	if retriable(resp.StatusCode) {
 		return errRetry
 	}
