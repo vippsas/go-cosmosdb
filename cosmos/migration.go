@@ -64,7 +64,6 @@ func lookupModelField(entityPtr Model) (tagVal, fieldVal string) {
 		}
 	}
 	panic(errors.New("No Model field"))
-	return
 }
 
 // CheckModel will check that the Model attribute is correctly set; also return the value.

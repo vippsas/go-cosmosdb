@@ -58,15 +58,15 @@ func (session Session) Transaction(closure func(*Transaction) error) error {
 func (txn *Transaction) commit() error {
 	// Sanity check -- help the poor developer out by not allowing put without get
 	base, partitionValue := txn.session.Collection.GetEntityInfo(txn.toPut)
-	uniqueKey, err := newUniqueKey(partitionValue, base.Id)
+	uk, err := newUniqueKey(partitionValue, base.Id)
 	if err != nil {
 		return err
 	}
-	if uniqueKey != txn.fetchedId {
+	if uk != txn.fetchedId {
 		return errors.WithStack(PutWithoutGetError)
 	}
 
-	if err := prePut(txn.toPut.(Model), txn); err != nil {
+	if err = prePut(txn.toPut.(Model), txn); err != nil {
 		return err
 	}
 
@@ -102,11 +102,11 @@ func (txn *Transaction) commit() error {
 }
 
 func (txn *Transaction) Get(partitionValue interface{}, id string, target Model) (err error) {
-	uniqueKey, err := newUniqueKey(partitionValue, id)
+	uk, err := newUniqueKey(partitionValue, id)
 	if err != nil {
 		return err
 	}
-	if txn.fetchedId != "" && txn.fetchedId != uniqueKey {
+	if txn.fetchedId != "" && txn.fetchedId != uk {
 		return errors.Wrap(NotImplementedError, "Fetching more than one entity in transaction not supported yet")
 	}
 
@@ -120,7 +120,8 @@ func (txn *Transaction) Get(partitionValue interface{}, id string, target Model)
 		// do nothing, cacheGet already unserialized to target
 	} else {
 		// post-get hook will be done by Collection.get()
-		response, err := txn.session.Collection.get(
+		var response cosmosapi.DocumentResponse
+		response, err = txn.session.Collection.get(
 			txn.session.Context,
 			partitionValue,
 			id,
@@ -131,12 +132,12 @@ func (txn *Transaction) Get(partitionValue interface{}, id string, target Model)
 			txn.session.state.sessionToken = response.SessionToken
 		}
 		if err == nil {
-			txn.session.cacheSet(partitionValue, id, target)
+			err = txn.session.cacheSet(partitionValue, id, target)
 		}
 	}
 
 	if err == nil {
-		txn.fetchedId = uniqueKey
+		txn.fetchedId = uk
 		err = postGet(target, txn)
 	}
 	return

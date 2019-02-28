@@ -2,6 +2,10 @@ package cosmos
 
 import (
 	"context"
+	"io/ioutil"
+	"log"
+	"net/http"
+	"net/http/httptest"
 	"testing"
 
 	"encoding/json"
@@ -21,7 +25,7 @@ type MyModel struct {
 	X           int    `json:"x"`           // data
 	SetByPrePut string `json:"setByPrePut"` // set by pre-put hook
 
-	XPlusOne       int `json:-` // computed field set by post-get hook
+	XPlusOne       int `json:"-"` // computed field set by post-get hook
 	PostGetCounter int // Incremented by post-get hook
 }
 
@@ -569,4 +573,23 @@ func TestIdAsPartitionKey_TransactionNonExisting(t *testing.T) {
 		return nil
 	}))
 	return
+}
+
+func Test429RatelimitingResponse(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusTooManyRequests)
+	}))
+	defer server.Close()
+	client := cosmosapi.New(server.URL, cosmosapi.Config{}, http.DefaultClient, log.New(ioutil.Discard, "", 0))
+	coll := Collection{
+		Client:       client,
+		PartitionKey: "id",
+	}
+	target := &MyModel{}
+	err := coll.Session().Transaction(func(transaction *Transaction) error {
+		return transaction.Get("foo", "bar", target)
+	})
+	if err == nil {
+		t.Fatal("Expected an error")
+	}
 }

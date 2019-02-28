@@ -7,3 +7,8 @@ test:
 	go test -v `go list ./cosmosapi`
 	go test -tags=offline -v `go list ./cosmos`
 	go test -v `go list ./cosmostest`
+
+vet:
+	go vet ./...
+
+.PHONY: test vet

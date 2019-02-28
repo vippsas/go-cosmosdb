@@ -46,8 +46,7 @@ type scenario struct {
 }
 
 func givenScenario(t *testing.T) *scenario {
-	scenario := scenario{t: t}
-	return &scenario
+	return &scenario{t: t}
 }
 
 func (s *scenario) getPartitionKeyRangeIds() (ids []string) {
@@ -193,13 +192,18 @@ func OpenConfigurationFile() (*os.File, error) {
 }
 
 func doOpenConfigurationFile(path string) (*os.File, error) {
-	if path, err := filepath.Abs(filepath.Join(path, "testconfig.yaml")); err != nil {
+	var (
+		pth  string
+		err  error
+		file *os.File
+	)
+	if pth, err = filepath.Abs(filepath.Join(path, "testconfig.yaml")); err != nil {
 		return nil, err // Fail
-	} else if file, err := os.Open(path); err == nil {
+	} else if file, err = os.Open(pth); err == nil {
 		return file, nil // Eureka!
-	} else if filepath.Dir(path) == filepath.Dir(filepath.Dir(path)) {
+	} else if filepath.Dir(pth) == filepath.Dir(filepath.Dir(pth)) {
 		return nil, err // Fail -- searched up to root directory without finding file
 	} else {
-		return doOpenConfigurationFile(filepath.Dir(filepath.Dir(path))) // Check parent directory
+		return doOpenConfigurationFile(filepath.Dir(filepath.Dir(pth))) // Check parent directory
 	}
 }
