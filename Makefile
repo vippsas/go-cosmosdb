@@ -10,5 +10,8 @@ test:
 
 vet:
 	go vet ./...
+	GO111MODULE=off go get -d golang.org/x/tools/go/analysis/passes/shadow/cmd/shadow
+	GO111MODULE=off go build -o shadow golang.org/x/tools/go/analysis/passes/shadow/cmd/shadow
+	go vet -vettool=shadow ./...
 
 .PHONY: test vet
