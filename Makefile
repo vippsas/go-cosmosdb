@@ -12,7 +12,7 @@ vet: exttools/bin/shadow
 	go vet ./...
 	go vet -vettool=exttools/bin/shadow ./...
 
-exttools/bin/shadow:
+exttools/bin/shadow: exttools
 
 exttools:
 	cd exttools && ./build.sh
