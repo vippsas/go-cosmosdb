@@ -10,6 +10,11 @@ import (
 	"github.com/vippsas/go-cosmosdb/cosmosapi"
 )
 
+const (
+	fmtUnexpectedIdError                = "Unexpeced Id on fetched document: expected '%s', got '%s'"
+	fmtUnexpectedPartitionKeyValueError = "Unexpected partition key vaule on fetched document: expected '%v', got: '%v'"
+)
+
 type Collection struct {
 	Client       Client
 	DbName       string
@@ -38,6 +43,7 @@ func (c Collection) log() logging.ExtendedLogger {
 
 func (c Collection) get(ctx context.Context, partitionValue interface{}, id string, target Model, consistency cosmosapi.ConsistencyLevel, sessionToken string) (cosmosapi.DocumentResponse, error) {
 	docResp, err := c.getExisting(ctx, partitionValue, id, target, consistency, sessionToken)
+	res, partitionValueField := c.getEntityInfo(target)
 	if err != nil && errors.Cause(err) == cosmosapi.ErrNotFound {
 		err = nil
 		// To be bullet-proof, make sure to zero out the target. It could e.g. be used for other purposes in a loop,
@@ -45,17 +51,17 @@ func (c Collection) get(ctx context.Context, partitionValue interface{}, id stri
 		val := reflect.ValueOf(target).Elem()
 		zero := reflect.Zero(val.Type())
 		val.Set(zero)
-		res, partitionValueField := c.getEntityInfo(target)
 		// Then write the ID information so that Put() will work after populating the entity
 		partitionValueField.Set(reflect.ValueOf(partitionValue))
 		res.Id = id
 	}
-	res, partitionValueField := c.getEntityInfo(target)
-	if res.Id != id {
-		c.log().Errorf("cosmos.Collection.get.InvalidDocumentId: expected: '%s', got: '%s'", id, res.Id)
-	}
-	if partitionValueField.Interface() != partitionValue {
-		c.log().Errorf("cosmos.Collection.get.InvalidPartitionKeyValue: expected '%v', got: '%v'", partitionValueField.Interface(), partitionValue)
+	if err == nil {
+		if res.Id != id {
+			return docResp, errors.Errorf(fmtUnexpectedIdError, id, res.Id)
+		}
+		if partitionValueField.Interface() != partitionValue {
+			return docResp, errors.Errorf(fmtUnexpectedPartitionKeyValueError, partitionValue, partitionValueField.Interface())
+		}
 	}
 	return docResp, err
 }

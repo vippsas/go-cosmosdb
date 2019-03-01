@@ -2,6 +2,7 @@ package cosmos
 
 import (
 	"context"
+	"fmt"
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -46,6 +47,7 @@ func (e *MyModel) PostGet(txn *Transaction) error {
 
 type mockCosmos struct {
 	ReturnX         int
+	ReturnEmptyId   bool
 	ReturnUserId    string
 	ReturnEtag      string
 	ReturnSession   string
@@ -88,7 +90,11 @@ func (mock *mockCosmos) GetDocument(ctx context.Context,
 	t := out.(*MyModel)
 	t.X = mock.ReturnX
 	t.BaseModel.Etag = mock.ReturnEtag
-	t.BaseModel.Id = id
+	if mock.ReturnEmptyId {
+		t.BaseModel.Id = ""
+	} else {
+		t.BaseModel.Id = id
+	}
 	t.UserId = mock.ReturnUserId
 	return cosmosapi.DocumentResponse{SessionToken: mock.ReturnSession}, mock.ReturnError
 }
@@ -366,6 +372,7 @@ func TestCachedGet(t *testing.T) {
 		mock.ReturnEtag = "etag-1"
 		mock.ReturnSession = "session"
 		mock.ReturnX = x
+		mock.ReturnUserId = "partitionvalue"
 	}
 
 	resetMock(42)
@@ -499,6 +506,7 @@ func TestTransactionRollback(t *testing.T) {
 		PartitionKey: "userId"}
 
 	session := c.Session()
+	mock.ReturnUserId = "partitionvalue"
 
 	require.NoError(t, session.Transaction(func(txn *Transaction) error {
 		var entity MyModel
@@ -565,6 +573,8 @@ func TestIdAsPartitionKey_TransactionNonExisting(t *testing.T) {
 
 	session := c.Session()
 
+	mock.ReturnError = cosmosapi.ErrNotFound
+
 	require.NoError(t, session.Transaction(func(txn *Transaction) error {
 		var entity MyModel
 		require.NoError(t, txn.Get("idvalue", "idvalue", &entity))
@@ -575,7 +585,68 @@ func TestIdAsPartitionKey_TransactionNonExisting(t *testing.T) {
 	return
 }
 
-func Test429RatelimitingResponse(t *testing.T) {
+func TestCollection_SanityChecksOnGet(t *testing.T) {
+	// We have some sanity checks on the documents that we read from cosmos, checking that the id and
+	// partition key value on the document is the same as the parameters passed to the get method.
+	// This is mainly to protect against our own mistakes, not because we expect cosmos to return malformed data here
+	// (although, you'll never know...)
+	mock := mockCosmos{}
+	c := Collection{
+		Client:       &mock,
+		DbName:       "mydb",
+		Name:         "mycollection",
+		PartitionKey: "userId"}
+
+	session := c.Session()
+
+	mock.ReturnUserId = ""
+	err := session.Get("partitionvalue", "idvalue", &MyModel{})
+	require.Error(t, err)
+	require.Equal(t, fmt.Sprintf(fmtUnexpectedPartitionKeyValueError, "partitionvalue", ""), err.Error())
+	mock.ReturnEmptyId = true
+	mock.ReturnUserId = "partitionvalue"
+	err = session.Get("partitionvalue", "idvalue", &MyModel{})
+	require.Error(t, err)
+	require.Equal(t, fmt.Sprintf(fmtUnexpectedIdError, "idvalue", ""), err.Error())
+}
+
+func TestTransaction_ErrorOnGet(t *testing.T) {
+	var responseStatus int
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(responseStatus)
+	}))
+	defer server.Close()
+	errorf := func(f string, args ...interface{}) {
+		pre := fmt.Sprintf("%s (%d): ", http.StatusText(responseStatus), responseStatus)
+		t.Errorf(pre+f, args...)
+	}
+	for _, responseStatus = range []int{
+		http.StatusTooManyRequests,     // We observed a bug on this code where Transaction.Get would ignore the error...
+		http.StatusInternalServerError, // ... but other status codes in cosmosapi.CosmosHTTPErrors should have the same behavior
+		http.StatusTeapot,              // Same for codes not in cosmosapi.CosmosHTTPErrors
+	} {
+		client := cosmosapi.New(server.URL, cosmosapi.Config{}, http.DefaultClient, log.New(ioutil.Discard, "", 0))
+		coll := Collection{
+			Client:       client,
+			DbName:       "MyDb",
+			Name:         "MyColl",
+			PartitionKey: "id",
+		}
+		target := &MyModel{}
+		err := coll.Session().Transaction(func(txn *Transaction) error {
+			err := txn.Get("", "", target)
+			if err == nil {
+				errorf("Expected error on Transaction.Get")
+			}
+			return err
+		})
+		if err == nil {
+			errorf("Expected transaction to return an error")
+		}
+	}
+}
+
+func TestTransaction_IgnoreErrorOnGetThenPut(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusTooManyRequests)
 	}))
@@ -583,13 +654,20 @@ func Test429RatelimitingResponse(t *testing.T) {
 	client := cosmosapi.New(server.URL, cosmosapi.Config{}, http.DefaultClient, log.New(ioutil.Discard, "", 0))
 	coll := Collection{
 		Client:       client,
+		DbName:       "MyDb",
+		Name:         "MyColl",
 		PartitionKey: "id",
 	}
 	target := &MyModel{}
-	err := coll.Session().Transaction(func(transaction *Transaction) error {
-		return transaction.Get("foo", "bar", target)
+	err := coll.Session().Transaction(func(txn *Transaction) error {
+		err := txn.Get("", "", target)
+		if err == nil {
+			t.Errorf("Expected an error")
+		}
+		txn.Put(target)
+		return nil
 	})
-	if err == nil {
-		t.Fatal("Expected an error")
+	if errors.Cause(err) != PutWithoutGetError {
+		t.Errorf("Expected error %v", PutWithoutGetError)
 	}
 }

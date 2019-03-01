@@ -8,10 +8,13 @@ test:
 	go test -tags=offline -v `go list ./cosmos`
 	go test -v `go list ./cosmostest`
 
-vet:
+vet: exttools/bin/shadow
 	go vet ./...
-	GO111MODULE=off go get -d golang.org/x/tools/go/analysis/passes/shadow/cmd/shadow
-	GO111MODULE=off go build -o shadow golang.org/x/tools/go/analysis/passes/shadow/cmd/shadow
-	go vet -vettool=shadow ./...
+	go vet -vettool=exttools/bin/shadow ./...
 
-.PHONY: test vet
+exttools/bin/shadow:
+
+exttools:
+	cd exttools && ./build.sh
+
+.PHONY: example test vet exttools
