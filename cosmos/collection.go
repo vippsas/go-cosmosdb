@@ -3,16 +3,12 @@ package cosmos
 import (
 	"context"
 	"fmt"
+	"github.com/vippsas/go-cosmosdb/logging"
 	"reflect"
 
 	"github.com/pkg/errors"
 	"github.com/vippsas/go-cosmosdb/cosmosapi"
 )
-
-type Logger interface {
-	Print(args ...interface{})
-	Printf(fmt string, args ...interface{})
-}
 
 type Collection struct {
 	Client       Client
@@ -20,7 +16,7 @@ type Collection struct {
 	Name         string
 	PartitionKey string
 	Context      context.Context
-	Log          Logger
+	Log          logging.StdLogger
 }
 
 func (c Collection) GetContext() context.Context {
@@ -36,6 +32,10 @@ func (c Collection) WithContext(ctx context.Context) Collection {
 	return c
 }
 
+func (c Collection) log() logging.ExtendedLogger {
+	return logging.Adapt(c.Log)
+}
+
 func (c Collection) get(ctx context.Context, partitionValue interface{}, id string, target Model, consistency cosmosapi.ConsistencyLevel, sessionToken string) (cosmosapi.DocumentResponse, error) {
 	docResp, err := c.getExisting(ctx, partitionValue, id, target, consistency, sessionToken)
 	if err != nil && errors.Cause(err) == cosmosapi.ErrNotFound {
@@ -45,12 +45,18 @@ func (c Collection) get(ctx context.Context, partitionValue interface{}, id stri
 		val := reflect.ValueOf(target).Elem()
 		zero := reflect.Zero(val.Type())
 		val.Set(zero)
-		// Then write the ID information so that Put() will work after populating the entity
 		res, partitionValueField := c.getEntityInfo(target)
+		// Then write the ID information so that Put() will work after populating the entity
 		partitionValueField.Set(reflect.ValueOf(partitionValue))
 		res.Id = id
 	}
-
+	res, partitionValueField := c.getEntityInfo(target)
+	if res.Id != id {
+		c.log().Errorf("cosmos.Collection.get.InvalidDocumentId: expected: '%s', got: '%s'", id, res.Id)
+	}
+	if partitionValueField.Interface() != partitionValue {
+		c.log().Errorf("cosmos.Collection.get.InvalidPartitionKeyValue: expected '%v', got: '%v'", partitionValueField.Interface(), partitionValue)
+	}
 	return docResp, err
 }
 

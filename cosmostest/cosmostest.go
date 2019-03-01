@@ -24,6 +24,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/vippsas/go-cosmosdb/cosmos"
 	"github.com/vippsas/go-cosmosdb/cosmosapi"
+	"github.com/vippsas/go-cosmosdb/logging"
 	"net/http"
 )
 
@@ -78,7 +79,7 @@ func RawClient(cfg Config) *cosmosapi.Client {
 	}, httpClient, nil)
 }
 
-func SetupUniqueCollectionWithExistingDatabaseAndDefaultThroughput(log cosmos.Logger, cfg Config, id, partitionKey string) cosmos.Collection {
+func SetupUniqueCollectionWithExistingDatabaseAndDefaultThroughput(log logging.StdLogger, cfg Config, id, partitionKey string) cosmos.Collection {
 	id = uuid.Must(uuid.NewV4()).String() + "-" + id
 	log.Printf("Creating Cosmos collection %s/%s\n", cfg.DbName, id)
 	client := RawClient(cfg)
@@ -102,7 +103,7 @@ func SetupUniqueCollectionWithExistingDatabaseAndDefaultThroughput(log cosmos.Lo
 	}
 }
 
-func SetupCollection(log cosmos.Logger, cfg Config, collectionId, partitionKey string) cosmos.Collection {
+func SetupCollection(log logging.StdLogger, cfg Config, collectionId, partitionKey string) cosmos.Collection {
 	if cfg.CollectionIdPrefix == "" {
 		cfg.CollectionIdPrefix = uuid.Must(uuid.NewV4()).String() + "-"
 	}
