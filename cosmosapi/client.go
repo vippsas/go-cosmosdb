@@ -7,6 +7,7 @@ import (
 	"io"
 	"io/ioutil"
 	"net/http"
+	"path"
 	"strings"
 	"time"
 
@@ -89,7 +90,7 @@ func (c *Client) query(ctx context.Context, link string, body, ret interface{}, 
 }
 
 func (c *Client) method(ctx context.Context, method, link string, ret interface{}, body io.Reader, headers map[string]string) (*http.Response, error) {
-	req, err := http.NewRequest(method, path(c.Url, link), body)
+	req, err := http.NewRequest(method, path.Join(c.Url, link), body)
 	if err != nil {
 		c.Log.Errorln(err)
 		return nil, err

@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"io"
 	"math/rand"
-	"strings"
 	"time"
 )
 
@@ -80,13 +79,6 @@ func backoffDelay(retryCount int) time.Duration {
 
 	delay := (1 << uint(retryCount)) * (rand.Intn(minTime) + minTime)
 	return time.Duration(delay) * time.Millisecond
-}
-
-// Generate link
-func path(url string, args ...string) (link string) {
-	args = append([]string{url}, args...)
-	link = strings.Join(args, "/")
-	return
 }
 
 // Read json response to given interface(struct, map, ..)

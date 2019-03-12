@@ -34,3 +34,10 @@ func TestResourceTypeFromLink(t *testing.T) {
 		})
 	}
 }
+
+func TestCreateDocLinkUrlSafe(t *testing.T) {
+	link := createDocLink("mydb", "mycoll", "\r")
+	assert.Equal(t, "dbs/mydb/colls/mycoll/docs/%0D", link)
+	link = createDocLink("mydb", "mycoll", "id?additionalParameters=true")
+	assert.Equal(t, "dbs/mydb/colls/mycoll/docs/id%3FadditionalParameters=true", link)
+}
