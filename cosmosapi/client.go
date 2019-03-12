@@ -7,7 +7,6 @@ import (
 	"io"
 	"io/ioutil"
 	"net/http"
-	"net/url"
 	"strings"
 	"time"
 
@@ -90,11 +89,7 @@ func (c *Client) query(ctx context.Context, link string, body, ret interface{}, 
 }
 
 func (c *Client) method(ctx context.Context, method, link string, ret interface{}, body io.Reader, headers map[string]string) (*http.Response, error) {
-	u, err := url.Parse(strings.Join(append([]string{c.Url}, link), "/"))
-	if err != nil {
-		return nil, errors.WithMessage(err, "Invalid URL")
-	}
-	req, err := http.NewRequest(method, u.String(), body)
+	req, err := http.NewRequest(method, path(c.Url, link), body)
 	if err != nil {
 		c.Log.Errorln(err)
 		return nil, err
