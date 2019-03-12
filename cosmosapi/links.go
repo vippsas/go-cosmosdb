@@ -9,11 +9,11 @@ func pe(in string) string {
 	return url.PathEscape(in)
 }
 
-func CreateTriggerLink(dbName, collName, triggerName string) string {
+func createTriggerLink(dbName, collName, triggerName string) string {
 	return "dbs/" + pe(dbName) + "/colls/" + pe(collName) + "/triggers/" + pe(triggerName)
 }
 
-func CreateCollLink(dbName, collName string) string {
+func createCollLink(dbName, collName string) string {
 	return "dbs/" + pe(dbName) + "/colls/" + pe(collName)
 }
 

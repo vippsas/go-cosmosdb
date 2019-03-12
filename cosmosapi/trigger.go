@@ -52,7 +52,7 @@ func (c *Client) CreateTrigger(ctx context.Context, dbName string, colName strin
 	trigOps TriggerCreateOptions) (*Trigger, error) {
 
 	trigger := &Trigger{}
-	link := CreateTriggerLink(dbName, colName, "")
+	link := createTriggerLink(dbName, colName, "")
 
 	_, err := c.create(ctx, link, trigOps, trigger, nil)
 
@@ -65,7 +65,7 @@ func (c *Client) CreateTrigger(ctx context.Context, dbName string, colName strin
 // https://docs.microsoft.com/en-us/rest/api/cosmos-db/list-triggers
 func (c *Client) ListTriggers(ctx context.Context, dbName string, colName string) (*CollectionTriggers, error) {
 
-	url := CreateCollLink(dbName, colName) + "/triggers"
+	url := createCollLink(dbName, colName) + "/triggers"
 
 	colTrigs := &CollectionTriggers{}
 	_, err := c.get(ctx, url, colTrigs, nil)
@@ -85,7 +85,7 @@ func (c *Client) ReplaceTrigger(ctx context.Context, dbName, colName string,
 	trigOps TriggerReplaceOptions) (*Trigger, error) {
 
 	trigger := &Trigger{}
-	link := CreateTriggerLink(dbName, colName, trigOps.Id)
+	link := createTriggerLink(dbName, colName, trigOps.Id)
 
 	_, err := c.replace(ctx, link, trigOps, trigger, nil)
 	if err != nil {

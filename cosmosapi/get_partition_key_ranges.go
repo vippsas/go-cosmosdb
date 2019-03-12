@@ -9,7 +9,7 @@ func (c *Client) GetPartitionKeyRanges(
 	databaseName, collectionName string,
 	options *GetPartitionKeyRangesOptions,
 ) (response GetPartitionKeyRangesResponse, err error) {
-	link := CreateCollLink(databaseName, collectionName) + "/pkranges"
+	link := createCollLink(databaseName, collectionName) + "/pkranges"
 	var responseBody getPartitionKeyRangesResponseBody
 	if headers, err := options.AsHeaders(); err != nil {
 		return response, err
