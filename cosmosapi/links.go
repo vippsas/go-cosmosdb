@@ -1,32 +1,36 @@
 package cosmosapi
 
 import (
+	"net/url"
 	"strings"
 )
 
-
-func CreateTriggerLink(dbName, collName, triggerName string) string {
-	return "dbs/" + dbName + "/colls/" + collName + "/triggers/" + triggerName
+func pe(in string) string {
+	return url.PathEscape(in)
 }
 
-func CreateCollLink(dbName, collName string) string {
-	return "dbs/" + dbName + "/colls/" + collName
+func createTriggerLink(dbName, collName, triggerName string) string {
+	return "dbs/" + pe(dbName) + "/colls/" + pe(collName) + "/triggers/" + pe(triggerName)
+}
+
+func createCollLink(dbName, collName string) string {
+	return "dbs/" + pe(dbName) + "/colls/" + pe(collName)
 }
 
 func createDocsLink(dbName, collName string) string {
-	return "dbs/" + dbName + "/colls/" + collName + "/docs"
+	return "dbs/" + pe(dbName) + "/colls/" + pe(collName) + "/docs"
 }
 
 func createDocLink(dbName, collName, doc string) string {
-	return "dbs/" + dbName + "/colls/" + collName + "/docs/" + doc
+	return "dbs/" + pe(dbName) + "/colls/" + pe(collName) + "/docs/" + pe(doc)
 }
 
 func createSprocsLink(dbName, collName string) string {
-	return "dbs/" + dbName + "/colls/" + collName  + "/sprocs"
+	return "dbs/" + pe(dbName) + "/colls/" + pe(collName) + "/sprocs"
 }
 
 func createSprocLink(dbName, collName, sprocName string) string {
-	return "dbs/" + dbName + "/colls/" + collName + "/sprocs/" + sprocName
+	return "dbs/" + pe(dbName) + "/colls/" + pe(collName) + "/sprocs/" + pe(sprocName)
 }
 
 // resourceTypeFromLink is used to extract the resource type link to use in the

@@ -114,7 +114,7 @@ func (c *Client) CreateCollection(ctx context.Context, dbName string,
 	}
 
 	collection := &Collection{}
-	link := CreateCollLink(dbName, "")
+	link := createCollLink(dbName, "")
 
 	_, err := c.create(ctx, link, colOps, collection, headers)
 	if err != nil {
@@ -139,7 +139,7 @@ func (c *Client) ListCollections(ctx context.Context, dbName string) (*DocumentC
 
 func (c *Client) GetCollection(ctx context.Context, dbName, colName string) (*Collection, error) {
 	collection := &Collection{}
-	link := CreateCollLink(dbName, colName)
+	link := createCollLink(dbName, colName)
 	_, err := c.get(ctx, link, collection, nil)
 	if err != nil {
 		return nil, err
@@ -149,7 +149,7 @@ func (c *Client) GetCollection(ctx context.Context, dbName, colName string) (*Co
 }
 
 func (c *Client) DeleteCollection(ctx context.Context, dbName, colName string) error {
-	_, err := c.delete(ctx, CreateCollLink(dbName, colName), nil)
+	_, err := c.delete(ctx, createCollLink(dbName, colName), nil)
 	return err
 }
 
@@ -158,7 +158,7 @@ func (c *Client) ReplaceCollection(ctx context.Context, dbName string,
 	colOps CollectionReplaceOptions) (*Collection, error) {
 
 	collection := &Collection{}
-	link := CreateCollLink(dbName, colOps.Id)
+	link := createCollLink(dbName, colOps.Id)
 
 	_, err := c.replace(ctx, link, colOps, collection, nil)
 	if err != nil {

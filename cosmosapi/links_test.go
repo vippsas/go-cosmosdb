@@ -34,3 +34,12 @@ func TestResourceTypeFromLink(t *testing.T) {
 		})
 	}
 }
+
+func TestCreateLinksUrlSafe(t *testing.T) {
+	assert.Equal(t, "dbs/mydb/colls/mycoll/triggers/%0D", createTriggerLink("mydb", "mycoll", "\r"))
+	assert.Equal(t, "dbs/mydb/colls/%7B%27collection%27:%27mycoll%27%7D", createCollLink("mydb", "{'collection':'mycoll'}"))
+	assert.Equal(t, "dbs/mydb/colls/%3Cdiv%3Emycoll%3C%2Fdiv%3E/docs", createDocsLink("mydb", "<div>mycoll</div>"))
+	assert.Equal(t, "dbs/mydb/colls/mycoll/docs/id%3FadditionalParameters=true", createDocLink("mydb", "mycoll", "id?additionalParameters=true"))
+	assert.Equal(t, "dbs/mydb/colls/%3Cdiv%3Emycoll%3C%2Fdiv%3E/sprocs", createSprocsLink("mydb", "<div>mycoll</div>"))
+	assert.Equal(t, "dbs/mydb/colls/%3Cdiv%3Emycoll%3C%2Fdiv%3E/sprocs/thesproc", createSprocLink("mydb", "<div>mycoll</div>", "thesproc"))
+}
