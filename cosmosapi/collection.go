@@ -3,7 +3,6 @@ package cosmosapi
 import (
 	"context"
 	"fmt"
-
 	"github.com/pkg/errors"
 )
 
@@ -122,19 +121,6 @@ func (c *Client) CreateCollection(ctx context.Context, dbName string,
 	}
 
 	return collection, nil
-}
-
-// https://docs.microsoft.com/en-us/rest/api/cosmos-db/list-collections
-func (c *Client) ListCollections(ctx context.Context, dbName string) (*DocumentCollection, error) {
-	url := createDatabaseLink(dbName) + "/colls"
-
-	docCol := &DocumentCollection{}
-	_, err := c.get(ctx, url, docCol, nil)
-	if err != nil {
-		return nil, err
-	}
-
-	return docCol, nil
 }
 
 func (c *Client) GetCollection(ctx context.Context, dbName, colName string) (*Collection, error) {
