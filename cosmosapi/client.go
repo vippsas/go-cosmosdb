@@ -29,8 +29,8 @@ type ResponseBase struct {
 
 func parseHttpResponse(httpResponse *http.Response) (ResponseBase, error) {
 	response := ResponseBase{}
-	if _, ok := httpResponse.Header[HEADER_REQUEST_CHARGE]; ok {
-		if requestCharge, err := strconv.ParseFloat(httpResponse.Header.Get(HEADER_REQUEST_CHARGE), 64); err != nil {
+	if header := httpResponse.Header.Get(HEADER_REQUEST_CHARGE); header != "" {
+		if requestCharge, err := strconv.ParseFloat(header, 64); err != nil {
 			return response, errors.WithStack(err)
 		} else {
 			response.RequestCharge = requestCharge
