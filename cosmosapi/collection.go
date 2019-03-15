@@ -2,8 +2,6 @@ package cosmosapi
 
 import (
 	"context"
-	"fmt"
-
 	"github.com/pkg/errors"
 )
 
@@ -53,75 +51,12 @@ type PartitionKey struct {
 	Kind  string   `json:"kind"`
 }
 
-// https://docs.microsoft.com/en-us/rest/api/cosmos-db/create-a-collection
-type CollectionCreateOptions struct {
-	Id             string          `json:"id"`
-	IndexingPolicy *IndexingPolicy `json:"indexingPolicy,omitempty"`
-	PartitionKey   *PartitionKey   `json:"partitionKey,omitempty"`
-
-	// RTUs [400 - 250000]. Do not use in combination with OfferType
-	OfferThroughput OfferThroughput `json:"offerThroughput,omitempty"`
-	// S1,S2,S3. Do not use in combination with OfferThroughput
-	OfferType         OfferType `json:"offerType,omitempty"`
-	DefaultTimeToLive int       `json:"defaultTtl,omitempty"`
-}
-
-func (colOps CollectionCreateOptions) AsHeaders() (map[string]string, error) {
-	headers := make(map[string]string)
-
-	if colOps.OfferThroughput > 0 {
-		headers[HEADER_OFFER_THROUGHPUT] = fmt.Sprintf("%d", colOps.OfferThroughput)
-	}
-
-	if colOps.OfferThroughput >= 10000 && colOps.PartitionKey == nil {
-		return nil, ErrThroughputRequiresPartitionKey
-	}
-
-	if colOps.OfferType != "" {
-		headers[HEADER_OFFER_TYPE] = fmt.Sprintf("%s", colOps.OfferType)
-	}
-
-	return headers, nil
-}
-
 type CollectionReplaceOptions struct {
 	Resource
 	Id                string          `json:"id"`
 	IndexingPolicy    *IndexingPolicy `json:"indexingPolicy,omitempty"`
 	PartitionKey      *PartitionKey   `json:"partitionKey,omitempty"`
 	DefaultTimeToLive int             `json:"defaultTtl,omitempty"`
-}
-
-// https://docs.microsoft.com/en-us/rest/api/cosmos-db/create-a-collection
-func (c *Client) CreateCollection(ctx context.Context, dbName string,
-	colOps CollectionCreateOptions) (*Collection, error) {
-
-	headers, hErr := colOps.AsHeaders()
-	if hErr != nil {
-		return nil, hErr
-	}
-
-	if colOps.OfferThroughput > 0 {
-		headers[HEADER_OFFER_THROUGHPUT] = fmt.Sprintf("%d", colOps.OfferThroughput)
-	}
-
-	if colOps.OfferThroughput >= 10000 && colOps.PartitionKey == nil {
-		return nil, errors.New(fmt.Sprintf("Must specify PartitionKey for collection '%s' when OfferThroughput is >= 10000", colOps.Id))
-	}
-
-	if colOps.OfferType != "" {
-		headers[HEADER_OFFER_TYPE] = fmt.Sprintf("%s", colOps.OfferType)
-	}
-
-	collection := &Collection{}
-	link := CreateCollLink(dbName, "")
-
-	_, err := c.create(ctx, link, colOps, collection, headers)
-	if err != nil {
-		return nil, err
-	}
-
-	return collection, nil
 }
 
 func (c *Client) GetCollection(ctx context.Context, dbName, colName string) (*Collection, error) {

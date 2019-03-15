@@ -1,4 +1,4 @@
-FROM golang:1.11.2-stretch as builder
+FROM golang:1.11.5-stretch as builder
 WORKDIR /src
 COPY . .
 RUN CGO_ENABLED=0 go build -o /cosmosdb-apply cmd/cosmosdb-apply/main.go

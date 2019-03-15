@@ -228,7 +228,7 @@ func getCollection(client *cosmosapi.Client, def collectionDefinition) (*cosmosa
 }
 
 func createCollection(def collectionDefinition, client *cosmosapi.Client) {
-	colCreateOpts := cosmosapi.CollectionCreateOptions{
+	colCreateOpts := cosmosapi.CreateCollectionOptions{
 		Id:                def.CollectionID,
 		IndexingPolicy:    def.IndexingPolicy,
 		PartitionKey:      def.PartitionKey,

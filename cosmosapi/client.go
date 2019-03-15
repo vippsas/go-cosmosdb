@@ -7,6 +7,7 @@ import (
 	"io"
 	"io/ioutil"
 	"net/http"
+	"strconv"
 	"strings"
 	"time"
 
@@ -21,6 +22,22 @@ var (
 	ResponseHook            func(ctx context.Context, method string, headers map[string][]string)
 	errUnexpectedHTTPStatus = errors.New("Unexpected HTTP return status")
 )
+
+type ResponseBase struct {
+	RequestCharge float64
+}
+
+func parseHttpResponse(httpResponse *http.Response) (ResponseBase, error) {
+	response := ResponseBase{}
+	if _, ok := httpResponse.Header[HEADER_REQUEST_CHARGE]; ok {
+		if requestCharge, err := strconv.ParseFloat(httpResponse.Header.Get(HEADER_REQUEST_CHARGE), 64); err != nil {
+			return response, errors.WithStack(err)
+		} else {
+			response.RequestCharge = requestCharge
+		}
+	}
+	return response, nil
+}
 
 // Config is required as input parameter for the constructor creating a new
 // cosmosdb client.
@@ -94,15 +111,10 @@ func (c *Client) method(ctx context.Context, method, link string, ret interface{
 		c.Log.Errorln(err)
 		return nil, err
 	}
-	c.Log.Debugf("Will call: %s\n", req.URL)
-	//r := ResourceRequest(link, req)
-
 	defaultHeaders, err := defaultHeaders(method, link, c.Config.MasterKey)
 	if err != nil {
-		c.Log.Debug(err)
-		return nil, err
+		return nil, errors.WithMessage(err, "Failed to create request headers")
 	}
-
 	if headers == nil {
 		headers = map[string]string{}
 	}
@@ -110,13 +122,9 @@ func (c *Client) method(ctx context.Context, method, link string, ret interface{
 		// insert if not already present
 		headers[k] = v
 	}
-
 	for k, v := range headers {
 		req.Header.Add(k, v)
 	}
-
-	c.Log.Debugf("Headers: %s\n", req.Header)
-
 	return c.do(ctx, req, ret)
 }
 
@@ -136,7 +144,6 @@ func (e RequestError) Error() string {
 }
 
 func (c *Client) checkResponse(resp *http.Response) error {
-	c.Log.Debugf("Got response code: %d", resp.StatusCode)
 	if retriable(resp.StatusCode) {
 		return errRetry
 	}
@@ -181,11 +188,12 @@ func (c *Client) do(ctx context.Context, r *http.Request, data interface{}) (*ht
 		}
 
 		r.Body = ioutil.NopCloser(bytes.NewReader(b))
-		c.Log.Debugln("Executing request")
+		c.Log.Debugf("Cosmos request: %s %s (headers: %s) (attempt: %d/%d)\n", r.Method, r.URL, r.Header, retryCount+1, c.Config.MaxRetries)
 		resp, err = cli.Do(r)
 		if err != nil {
 			return nil, err
 		}
+		c.Log.Debugf("Cosmos response: %s (headers: %s)", resp.Status, resp.Header)
 		err = c.handleResponse(ctx, r, resp, data)
 		if err == errRetry {
 			continue

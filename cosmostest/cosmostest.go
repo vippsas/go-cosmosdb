@@ -83,7 +83,7 @@ func SetupUniqueCollectionWithExistingDatabaseAndDefaultThroughput(log logging.S
 	id = uuid.Must(uuid.NewV4()).String() + "-" + id
 	log.Printf("Creating Cosmos collection %s/%s\n", cfg.DbName, id)
 	client := RawClient(cfg)
-	_, err := client.CreateCollection(context.Background(), cfg.DbName, cosmosapi.CollectionCreateOptions{
+	_, err := client.CreateCollection(context.Background(), cfg.DbName, cosmosapi.CreateCollectionOptions{
 		Id: id,
 		PartitionKey: &cosmosapi.PartitionKey{
 			Paths: []string{"/" + partitionKey},
@@ -118,7 +118,7 @@ func SetupCollection(log logging.StdLogger, cfg Config, collectionId, partitionK
 		}
 		// Database already existed, which is OK
 	}
-	_, err := client.CreateCollection(context.Background(), cfg.DbName, cosmosapi.CollectionCreateOptions{
+	_, err := client.CreateCollection(context.Background(), cfg.DbName, cosmosapi.CreateCollectionOptions{
 		Id: collectionId,
 		PartitionKey: &cosmosapi.PartitionKey{
 			Paths: []string{"/" + partitionKey},
