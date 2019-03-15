@@ -186,9 +186,8 @@ func (c Collection) RacingPut(entityPtr Model) error {
 	return err
 }
 
-func (c Collection) Query(query string, entities interface{}) error {
-	_, err := c.Client.QueryDocuments(c.Context, c.DbName, c.Name, cosmosapi.Query{Query: query}, entities, cosmosapi.DefaultQueryDocumentOptions())
-	return err
+func (c Collection) Query(query string, entities interface{}) (cosmosapi.QueryDocumentsResponse, error) {
+	return c.Client.QueryDocuments(c.Context, c.DbName, c.Name, cosmosapi.Query{Query: query}, entities, cosmosapi.DefaultQueryDocumentOptions())
 }
 
 // Execute a StoredProcedure on the collection
