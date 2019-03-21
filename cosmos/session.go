@@ -3,7 +3,6 @@ package cosmos
 import (
 	"context"
 	"encoding/json"
-
 	"github.com/pkg/errors"
 )
 
@@ -80,9 +79,12 @@ func (session Session) cacheSet(partitionValue interface{}, id string, entity Mo
 	if err != nil {
 		return err
 	}
-	serialized, err := json.Marshal(entity)
-	if err != nil {
-		return errors.WithStack(err)
+	var serialized []byte = nil
+	if !entity.IsNew() {
+		serialized, err = json.Marshal(entity)
+		if err != nil {
+			return errors.WithStack(err)
+		}
 	}
 	session.state.entityCache[key] = serialized
 	return nil
@@ -96,8 +98,11 @@ func (session Session) cacheGet(partitionKey interface{}, id string, entityPtr M
 	serialized, ok := session.state.entityCache[key]
 	if !ok {
 		return false, nil
-	} else {
+	} else if serialized != nil {
 		return true, json.Unmarshal(serialized, entityPtr)
+	} else {
+		session.Collection.initializeEmptyDoc(partitionKey, id, entityPtr)
+		return true, nil
 	}
 }
 

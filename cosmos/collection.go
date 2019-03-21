@@ -43,19 +43,12 @@ func (c Collection) log() logging.ExtendedLogger {
 
 func (c Collection) get(ctx context.Context, partitionValue interface{}, id string, target Model, consistency cosmosapi.ConsistencyLevel, sessionToken string) (cosmosapi.DocumentResponse, error) {
 	docResp, err := c.getExisting(ctx, partitionValue, id, target, consistency, sessionToken)
-	res, partitionValueField := c.getEntityInfo(target)
 	if err != nil && errors.Cause(err) == cosmosapi.ErrNotFound {
 		err = nil
-		// To be bullet-proof, make sure to zero out the target. It could e.g. be used for other purposes in a loop,
-		// it is nice to be able to rely on zeroing out on not-found
-		val := reflect.ValueOf(target).Elem()
-		zero := reflect.Zero(val.Type())
-		val.Set(zero)
-		// Then write the ID information so that Put() will work after populating the entity
-		partitionValueField.Set(reflect.ValueOf(partitionValue))
-		res.Id = id
+		c.initializeEmptyDoc(partitionValue, id, target)
 	}
 	if err == nil {
+		res, partitionValueField := c.getEntityInfo(target)
 		if res.Id != id {
 			return docResp, errors.Errorf(fmtUnexpectedIdError, id, res.Id)
 		}
@@ -64,6 +57,18 @@ func (c Collection) get(ctx context.Context, partitionValue interface{}, id stri
 		}
 	}
 	return docResp, err
+}
+
+func (c Collection) initializeEmptyDoc(partitionValue interface{}, id string, target Model) {
+	res, partitionValueField := c.getEntityInfo(target)
+	// To be bullet-proof, make sure to zero out the target. It could e.g. be used for other purposes in a loop,
+	// it is nice to be able to rely on zeroing out on not-found
+	val := reflect.ValueOf(target).Elem()
+	zero := reflect.Zero(val.Type())
+	val.Set(zero)
+	// Then write the ID information so that Put() will work after populating the entity
+	partitionValueField.Set(reflect.ValueOf(partitionValue))
+	res.Id = id
 }
 
 func (c Collection) getExisting(ctx context.Context, partitionValue interface{}, id string, target Model, consistency cosmosapi.ConsistencyLevel, sessionToken string) (cosmosapi.DocumentResponse, error) {
