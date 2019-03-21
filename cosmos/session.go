@@ -74,15 +74,6 @@ func (session Session) Get(partitionValue interface{}, id string, target Model) 
 	})
 }
 
-func (session Session) cacheSetEmpty(partitionValue interface{}, id string) error {
-	key, err := newUniqueKey(partitionValue, id)
-	if err != nil {
-		return err
-	}
-	session.state.entityCache[key] = nil
-	return nil
-}
-
 func (session Session) cacheSet(partitionValue interface{}, id string, entity Model) error {
 	key, err := newUniqueKey(partitionValue, id)
 	if err != nil {
