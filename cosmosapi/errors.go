@@ -32,6 +32,9 @@ var (
 	ErrRetryWith          = errors.New("The operation encountered a transient error. It is safe to retry the operation")
 	ErrInternalError      = errors.New("The operation failed due to an unexpected service error")
 	ErrUnavailable        = errors.New("The operation could not be completed because the service was unavailable")
+	// Undocumented code. A known scenario where it is used is when doing a ListDocuments request with ReadFeed
+	// properties on a partition that was split by a repartition.
+	ErrGone = errors.New("Resource is gone")
 
 	CosmosHTTPErrors = map[int]error{
 		http.StatusOK:                    nil,
@@ -44,6 +47,7 @@ var (
 		http.StatusNotFound:              ErrNotFound,
 		http.StatusRequestTimeout:        ErrTimeout,
 		http.StatusConflict:              ErrConflict,
+		http.StatusGone:                  ErrGone,
 		http.StatusPreconditionFailed:    ErrPreconditionFailed,
 		http.StatusRequestEntityTooLarge: ErrTooLarge,
 		http.StatusTooManyRequests:       ErrTooManyRequests,

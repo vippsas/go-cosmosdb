@@ -30,9 +30,10 @@ type getPartitionKeyRangesResponseBody struct {
 }
 
 type PartitionKeyRange struct {
-	Id           string `json:"id"`
-	MaxExclusive string `json:"maxExclusive"`
-	MinInclusive string `json:"minInclusive"`
+	Id           string   `json:"id"`
+	MaxExclusive string   `json:"maxExclusive"`
+	MinInclusive string   `json:"minInclusive"`
+	Parents      []string `json:"parents"`
 }
 
 type GetPartitionKeyRangesOptions struct {

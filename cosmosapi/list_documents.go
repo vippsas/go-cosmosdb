@@ -75,22 +75,17 @@ func (ops ListDocumentsOptions) AsHeaders() (map[string]string, error) {
 }
 
 type ListDocumentsResponse struct {
-	RequestCharge float64
-	SessionToken  string
-	Continuation  string
-	Etag          string
+	ResponseBase
+	SessionToken string
+	Continuation string
+	Etag         string
 }
 
 func (r *ListDocumentsResponse) parse(httpResponse *http.Response) (*ListDocumentsResponse, error) {
 	r.SessionToken = httpResponse.Header.Get(HEADER_SESSION_TOKEN)
 	r.Continuation = httpResponse.Header.Get(HEADER_CONTINUATION)
 	r.Etag = httpResponse.Header.Get(HEADER_ETAG)
-	if _, ok := httpResponse.Header[HEADER_REQUEST_CHARGE]; ok {
-		if requestCharge, err := strconv.ParseFloat(httpResponse.Header.Get(HEADER_REQUEST_CHARGE), 64); err != nil {
-			return r, errors.WithStack(err)
-		} else {
-			r.RequestCharge = requestCharge
-		}
-	}
-	return r, nil
+	rb, err := parseHttpResponse(httpResponse)
+	r.ResponseBase = rb
+	return r, err
 }
