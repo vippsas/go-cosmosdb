@@ -32,9 +32,12 @@ type Client interface {
 	CreateDocument(ctx context.Context, dbName, colName string, doc interface{}, ops cosmosapi.CreateDocumentOptions) (*cosmosapi.Resource, cosmosapi.DocumentResponse, error)
 	ReplaceDocument(ctx context.Context, dbName, colName, id string, doc interface{}, ops cosmosapi.ReplaceDocumentOptions) (*cosmosapi.Resource, cosmosapi.DocumentResponse, error)
 	QueryDocuments(ctx context.Context, dbName, collName string, qry cosmosapi.Query, docs interface{}, ops cosmosapi.QueryDocumentsOptions) (cosmosapi.QueryDocumentsResponse, error)
+	ListDocuments(ctx context.Context, dbName, colName string, ops *cosmosapi.ListDocumentsOptions, docs interface{}) (cosmosapi.ListDocumentsResponse, error)
+	GetCollection(ctx context.Context, dbName, colName string) (*cosmosapi.Collection, error)
 	DeleteCollection(ctx context.Context, dbName, colName string) error
 	DeleteDatabase(ctx context.Context, dbName string, ops *cosmosapi.RequestOptions) error
 	ExecuteStoredProcedure(ctx context.Context, dbName, colName, sprocName string, ops cosmosapi.ExecuteStoredProcedureOptions, ret interface{}, args ...interface{}) error
-	ListDocuments(ctx context.Context, dbName, colName string, ops *cosmosapi.ListDocumentsOptions, docs interface{}) (cosmosapi.ListDocumentsResponse, error)
 	GetPartitionKeyRanges(ctx context.Context, dbName, colName string, options *cosmosapi.GetPartitionKeyRangesOptions) (cosmosapi.GetPartitionKeyRangesResponse, error)
+	ListOffers(ctx context.Context, ops *cosmosapi.RequestOptions) (*cosmosapi.Offers, error)
+	ReplaceOffer(ctx context.Context, offerOps cosmosapi.OfferReplaceOptions, ops *cosmosapi.RequestOptions) (*cosmosapi.Offer, error)
 }

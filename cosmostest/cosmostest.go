@@ -79,7 +79,7 @@ func RawClient(cfg Config) *cosmosapi.Client {
 	}, httpClient, nil)
 }
 
-func SetupUniqueCollectionWithExistingDatabaseAndDefaultThroughput(log logging.StdLogger, cfg Config, id, partitionKey string) cosmos.Collection {
+func SetupUniqueCollectionWithExistingDatabaseAndMinimalThroughput(log logging.StdLogger, cfg Config, id, partitionKey string) cosmos.Collection {
 	id = uuid.Must(uuid.NewV4()).String() + "-" + id
 	log.Printf("Creating Cosmos collection %s/%s\n", cfg.DbName, id)
 	client := RawClient(cfg)
@@ -89,6 +89,7 @@ func SetupUniqueCollectionWithExistingDatabaseAndDefaultThroughput(log logging.S
 			Paths: []string{"/" + partitionKey},
 			Kind:  "Hash",
 		},
+		OfferThroughput: cosmosapi.OfferThroughput(400),
 	})
 	if err != nil {
 		panic(fmt.Sprintf("Failed to create Cosmos collection %s in database %s\n: %+v", id, cfg.DbName, err))
