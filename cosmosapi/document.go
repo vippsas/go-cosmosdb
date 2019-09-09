@@ -54,6 +54,8 @@ func (ops CreateDocumentOptions) AsHeaders() (map[string]string, error) {
 			return nil, err
 		}
 		headers[HEADER_PARTITIONKEY] = v
+	} else {
+		headers[HEADER_PARTITIONKEY] = ""
 	}
 
 	headers[HEADER_UPSERT] = strconv.FormatBool(ops.IsUpsert)
@@ -171,6 +173,8 @@ func (ops ReplaceDocumentOptions) AsHeaders() (map[string]string, error) {
 			return nil, err
 		}
 		headers[HEADER_PARTITIONKEY] = v
+	} else {
+		headers[HEADER_PARTITIONKEY] = ""
 	}
 
 	if ops.IndexingDirective != "" {
