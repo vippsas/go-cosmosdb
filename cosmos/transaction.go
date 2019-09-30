@@ -29,6 +29,8 @@ func Rollback() error {
 // Transaction <todo rest of docs>. Note: On commit, the Etag is updated on all relevant
 // entities (but normally these should never be used outside)
 func (session Session) Transaction(closure func(*Transaction) error) error {
+	session.state.mu.Lock()
+	defer session.state.mu.Unlock()
 	if session.ConflictRetries == 0 {
 		return errors.Errorf("Number of retries set to 0")
 	}
@@ -94,7 +96,7 @@ func (txn *Transaction) commit() error {
 
 	} else if errors.Cause(err) == cosmosapi.ErrPreconditionFailed {
 		// We know that this object is staled, make sure to remove it from cache
-		txn.session.Drop(partitionValue, base.Id)
+		txn.session.drop(partitionValue, base.Id)
 	}
 
 	return err

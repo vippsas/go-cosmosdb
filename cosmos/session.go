@@ -4,11 +4,13 @@ import (
 	"context"
 	"encoding/json"
 	"github.com/pkg/errors"
+	"sync"
 )
 
 const DefaultConflictRetries = 3
 
 type sessionState struct {
+	mu           sync.Mutex
 	sessionToken string
 
 	// The entity cache is a map of string -> interface to json serialization.struct (not
@@ -35,6 +37,12 @@ func (c Collection) Session() Session {
 	}
 }
 
+func (c Collection) SessionContext(ctx context.Context) Session {
+	sess := c.Session().WithContext(ctx)
+	setStateFromContext(ctx, &sess)
+	return sess
+}
+
 func (c Collection) ResumeSession(token string) Session {
 	session := c.Session()
 	session.state.sessionToken = token
@@ -58,6 +66,12 @@ func (session Session) WithRetries(n int) Session {
 // Drop removes an entity from the session cache, so that the next fetch will always go
 // out externally to fetch it.
 func (session Session) Drop(partitionValue interface{}, id string) {
+	session.state.mu.Lock()
+	defer session.state.mu.Unlock()
+	session.drop(partitionValue, id)
+}
+
+func (session Session) drop(partitionValue interface{}, id string) {
 	key, err := newUniqueKey(partitionValue, id)
 	if err != nil {
 		// This shouldn't happen. If we're unable to create the cache key, we wouldn't be able to populate the cache
