@@ -17,7 +17,7 @@ go sdk for Azure Cosmos DB
 * instantiate a `config` struct. Set the keys, url and some other parameters.
 * call the constructor `New(cfg config)`
 
-* `cosmosdb` follows the hierachy of Cosmos DB. This means that you can operate
+* `cosmosdb` follows the hierarchy of Cosmos DB. This means that you can operate
   on the resource the current type represents. The database struct can work with
   resources that belong to a cosmos database, the `Collection` type can work with
   resources that belong to a collection.
