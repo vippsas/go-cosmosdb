@@ -46,6 +46,7 @@ func (e *MyModel) PostGet(txn *Transaction) error {
 //
 
 type mockCosmos struct {
+	Client
 	ReturnX         int
 	ReturnEmptyId   bool
 	ReturnUserId    string
@@ -58,22 +59,6 @@ type mockCosmos struct {
 	GotUpsert       bool
 	GotX            int
 	GotSession      string
-}
-
-func (mock *mockCosmos) QueryDocuments(ctx context.Context, dbName, collName string, qry cosmosapi.Query, docs interface{}, ops cosmosapi.QueryDocumentsOptions) (cosmosapi.QueryDocumentsResponse, error) {
-	panic("implement me")
-}
-
-func (mock *mockCosmos) DeleteCollection(ctx context.Context, dbName, colName string) error {
-	panic("implement me")
-}
-
-func (mock *mockCosmos) DeleteDatabase(ctx context.Context, dbName string, ops *cosmosapi.RequestOptions) error {
-	panic("implement me")
-}
-
-func (mock *mockCosmos) ExecuteStoredProcedure(ctx context.Context, dbName, colName, sprocName string, ops cosmosapi.ExecuteStoredProcedureOptions, ret interface{}, args ...interface{}) error {
-	panic("implement me")
 }
 
 func (mock *mockCosmos) reset() {
@@ -159,41 +144,9 @@ type mockCosmosNotFound struct {
 	mockCosmos
 }
 
-func (mockCosmosNotFound) QueryDocuments(ctx context.Context, dbName, collName string, qry cosmosapi.Query, docs interface{}, ops cosmosapi.QueryDocumentsOptions) (cosmosapi.QueryDocumentsResponse, error) {
-	panic("implement me")
-}
-
-func (mockCosmosNotFound) ExecuteStoredProcedure(ctx context.Context, dbName, colName, sprocName string, ops cosmosapi.ExecuteStoredProcedureOptions, ret interface{}, args ...interface{}) error {
-	panic("implement me")
-}
-
-func (mockCosmosNotFound) GetDocument(ctx context.Context, dbName, colName, id string, ops cosmosapi.GetDocumentOptions, out interface{}) (cosmosapi.DocumentResponse, error) {
+func (mock *mockCosmosNotFound) GetDocument(ctx context.Context,
+	dbName, colName, id string, ops cosmosapi.GetDocumentOptions, out interface{}) (cosmosapi.DocumentResponse, error) {
 	return cosmosapi.DocumentResponse{}, cosmosapi.ErrNotFound
-}
-
-func (mock *mockCosmosNotFound) DeleteCollection(ctx context.Context, dbName, colName string) error {
-	panic("implement me")
-}
-
-func (mock *mockCosmosNotFound) DeleteDatabase(ctx context.Context, dbName string, ops *cosmosapi.RequestOptions) error {
-	panic("implement me")
-}
-
-func (mock *mockCosmosNotFound) ListDocuments(
-	ctx context.Context,
-	databaseName, collectionName string,
-	options *cosmosapi.ListDocumentsOptions,
-	documentList interface{},
-) (response cosmosapi.ListDocumentsResponse, err error) {
-	panic("implement me")
-}
-
-func (mock *mockCosmosNotFound) GetPartitionKeyRanges(
-	ctx context.Context,
-	databaseName, collectionName string,
-	options *cosmosapi.GetPartitionKeyRangesOptions,
-) (response cosmosapi.GetPartitionKeyRangesResponse, err error) {
-	panic("implement me")
 }
 
 //
@@ -227,11 +180,10 @@ func TestCollectionStaleGet(t *testing.T) {
 	var target MyModel
 	target.X = 3
 	target.Etag = "some-e-tag"
-
 	err := c.StaleGetExisting("foo", "foo", &target)
 	// StaleGetExisting: target not modified, returns not found error
-	require.Equal(t, 3, target.X)
 	require.Equal(t, cosmosapi.ErrNotFound, errors.Cause(err))
+	require.Equal(t, 3, target.X)
 
 	// StaleGet: target zeroed, returns nil
 	err = c.StaleGet("foo", "foo", &target)
@@ -394,6 +346,7 @@ func TestCachedGet(t *testing.T) {
 		require.Equal(t, 1, entity.PostGetCounter)
 		entity.X = 43
 		entity.UserId = "partitionvalue"
+		mock.ReturnEtag = "foobar"
 		txn.Put(&entity)
 		return nil
 	}))
