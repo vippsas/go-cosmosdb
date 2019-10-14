@@ -99,7 +99,6 @@ func SetupUniqueCollectionWithExistingDatabaseAndMinimalThroughput(log logging.S
 		DbName:       cfg.DbName,
 		Name:         id,
 		PartitionKey: partitionKey,
-		Log:          log,
 		Context:      context.Background(),
 	}
 }
@@ -137,7 +136,6 @@ func SetupCollection(log logging.StdLogger, cfg Config, collectionId, partitionK
 		DbName:       cfg.DbName,
 		Name:         collectionId,
 		PartitionKey: partitionKey,
-		Log:          log,
 	}
 
 }

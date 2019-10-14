@@ -3,7 +3,6 @@ package cosmos
 import (
 	"context"
 	"fmt"
-	"github.com/vippsas/go-cosmosdb/logging"
 	"reflect"
 
 	"github.com/pkg/errors"
@@ -21,7 +20,8 @@ type Collection struct {
 	Name         string
 	PartitionKey string
 	Context      context.Context
-	Log          logging.StdLogger
+
+	sessionSlotIndex int
 }
 
 func (c Collection) GetContext() context.Context {
@@ -37,8 +37,12 @@ func (c Collection) WithContext(ctx context.Context) Collection {
 	return c
 }
 
-func (c Collection) log() logging.ExtendedLogger {
-	return logging.Adapt(c.Log)
+// Init the collection. Certain features requires this to be called on the collection, for backwards compatibility
+// many features can be used without initializing.
+// Currently only required if you want to store session state on the context (Collection.SessionContext())
+func (c Collection) Init() Collection {
+	initForContextSessions(&c)
+	return c
 }
 
 func (c Collection) get(ctx context.Context, partitionValue interface{}, id string, target Model, consistency cosmosapi.ConsistencyLevel, sessionToken string) (cosmosapi.DocumentResponse, error) {
