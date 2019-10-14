@@ -31,7 +31,7 @@ func TestSessionGetter(tt *testing.T) {
 			req, err := http.NewRequest(http.MethodGet, "http://test.test", nil)
 			require.NoError(t, err)
 			require.Panics(t, func() { getStateContainer(req.Context()) })
-			SessionsMiddleware()(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			SessionsMiddleware(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				require.NotNil(t, getStateContainer(req.Context()))
 			}))
 		},
