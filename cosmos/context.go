@@ -18,7 +18,8 @@ var (
 )
 
 // WithSessions initializes a container for the session states on the context. This enables restoring the cosmos
-// session from the context. Can be used recursively to reset the session states.
+// session from the context. Can be used on a child context to reset the sessions without resetting the sessions of
+// the parent context.
 func WithSessions(ctx context.Context) context.Context {
 	return context.WithValue(ctx, ckStateContainer, newStateContainer())
 }
@@ -26,12 +27,10 @@ func WithSessions(ctx context.Context) context.Context {
 // SessionMiddleware is a convenience middleware for initializing the session state container on the request context.
 // See: WithSessions()
 func SessionsMiddleware(next http.Handler) http.Handler {
-	return func(next http.Handler) http.Handler {
-		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			r = r.WithContext(WithSessions(r.Context()))
-			next.ServeHTTP(w, r)
-		})
-	}
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		r = r.WithContext(WithSessions(r.Context()))
+		next.ServeHTTP(w, r)
+	})
 }
 
 func initForContextSessions(coll *Collection) {
@@ -77,6 +76,6 @@ func (sc *stateContainer) setState(session *Session) {
 }
 
 func newStateContainer() *stateContainer {
-	// update of sessionSlotCount is atomic, so no need to lock here
+	// sessionSlotCount is the size of a word, so reads will always be consistent without the need for locking
 	return &stateContainer{states: make(map[int]*sessionState, sessionSlotCount)}
 }
