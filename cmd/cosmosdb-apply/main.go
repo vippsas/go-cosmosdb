@@ -1,13 +1,16 @@
 package main
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"flag"
 	"fmt"
 	"github.com/vippsas/go-cosmosdb/cosmosapi"
+	"io"
 	"io/ioutil"
 	"log"
+	"net/http"
 	"os"
 	"path/filepath"
 	"strings"
@@ -108,8 +111,62 @@ func newCosmosDbClient(masterKey string) *cosmosapi.Client {
 	cosmosCfg := cosmosapi.Config{
 		MasterKey: masterKey,
 	}
-	client := cosmosapi.New(fmt.Sprintf("https://%s.documents.azure.com:443", options.instanceName), cosmosCfg, nil, nil)
+	client := cosmosapi.New(fmt.Sprintf("https://%s.documents.azure.com:443", options.instanceName), cosmosCfg, &http.Client{Transport: logRoundTrip(nil)}, nil)
 	return client
+}
+
+func logRoundTrip(rt http.RoundTripper) RoundTripFunc {
+	if rt == nil {
+		rt = http.DefaultTransport
+	}
+	return func(req *http.Request) (response *http.Response, e error) {
+		log.Printf("Request: %s %s\n", req.Method, req.URL)
+		if req.Body != nil {
+			reqBytes, err := readAllAndClose(req.Body)
+			if err != nil {
+				return nil, err
+			}
+			req.Body = ioutil.NopCloser(bytes.NewReader(reqBytes))
+			log.Println(string(formatJson(reqBytes)))
+		}
+		resp, err := rt.RoundTrip(req)
+		if err != nil {
+			return resp, err
+		}
+		log.Printf("Response: %s\n", resp.Status)
+		if resp.Body != nil {
+			respBytes, err := readAllAndClose(resp.Body)
+			if err != nil {
+				return resp, err
+			}
+			resp.Body = ioutil.NopCloser(bytes.NewReader(respBytes))
+			log.Println(string(formatJson(respBytes)))
+		}
+		return resp, nil
+	}
+}
+
+func readAllAndClose(r io.ReadCloser) ([]byte, error) {
+	defer r.Close()
+	return ioutil.ReadAll(r)
+}
+
+func formatJson(b []byte) []byte {
+	m := make(map[string]interface{})
+	if err := json.Unmarshal(b, &m); err != nil {
+		return b
+	}
+	res, err := json.MarshalIndent(m, "", "    ")
+	if err != nil {
+		return b
+	}
+	return res
+}
+
+type RoundTripFunc func(req *http.Request) (*http.Response, error)
+
+func (r RoundTripFunc) RoundTrip(req *http.Request) (*http.Response, error) {
+	return r(req)
 }
 
 // --- Database related
