@@ -35,6 +35,10 @@ type ExcludedPath struct {
 	Path string `json:"path"`
 }
 
+type CompositeIndex []struct {
+	Path string `json:"path"`
+}
+
 // Stored Procedure
 type Sproc struct {
 	Resource
