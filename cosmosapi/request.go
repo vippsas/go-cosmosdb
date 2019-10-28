@@ -57,7 +57,7 @@ var (
 func defaultHeaders(method, link, key string) (map[string]string, error) {
 	h := map[string]string{}
 	h[HEADER_XDATE] = time.Now().UTC().Format("Mon, 02 Jan 2006 15:04:05 GMT")
-	h[HEADER_VER] = apiVersion // TODO: move to package level
+	h[HEADER_VER] = apiVersion
 
 	sign, err := signedPayload(method, link, h[HEADER_XDATE], key)
 	if err != nil {
