@@ -2,6 +2,7 @@ package cosmosapi
 
 import (
 	"context"
+
 	"github.com/pkg/errors"
 )
 
@@ -27,10 +28,11 @@ type DocumentCollection struct {
 }
 
 type IndexingPolicy struct {
-	IndexingMode IndexingMode   `json:"indexingMode,omitempty"`
-	Automatic    bool           `json:"automatic"`
-	Included     []IncludedPath `json:"includedPaths,omitempty"`
-	Excluded     []ExcludedPath `json:"excludedPaths,omitempty"`
+	IndexingMode IndexingMode     `json:"indexingMode,omitempty"`
+	Automatic    bool             `json:"automatic"`
+	Included     []IncludedPath   `json:"includedPaths,omitempty"`
+	Excluded     []ExcludedPath   `json:"excludedPaths,omitempty"`
+	Composite    []CompositeIndex `json:"compositeIndexes,omitempty"`
 }
 
 type IndexingMode string

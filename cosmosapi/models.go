@@ -18,6 +18,13 @@ const (
 	Spatial = IndexKind("Spatial")
 )
 
+type IndexOrder string
+
+const (
+	Ascending  IndexOrder = "ascending"
+	Descending IndexOrder = "descending"
+)
+
 const MaxPrecision = -1
 
 type Index struct {
@@ -33,6 +40,11 @@ type IncludedPath struct {
 
 type ExcludedPath struct {
 	Path string `json:"path"`
+}
+
+type CompositeIndex []struct {
+	Path  string     `json:"path"`
+	Order IndexOrder `json:"order,omitempty"`
 }
 
 // Stored Procedure

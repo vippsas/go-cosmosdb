@@ -15,6 +15,10 @@ import (
 	"github.com/vippsas/go-cosmosdb/logging"
 )
 
+const (
+	apiVersion = "2018-12-31"
+)
+
 var (
 	// TODO: useful?
 	IgnoreContext bool
