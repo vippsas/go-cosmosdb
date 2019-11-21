@@ -95,27 +95,9 @@ func (ops ExecuteStoredProcedureOptions) AsHeaders() (map[string]string, error) 
 	return headers, nil
 }
 
-// ExecuteStoredProcedure executes the procedure and returns an error if the
-// procedure failed.
-//
-// Deprecated: Use ExecuteStoredProcedure2 instead.
-func (c *Client) ExecuteStoredProcedure(
-	ctx context.Context, dbName, colName, sprocName string,
-	ops ExecuteStoredProcedureOptions,
-	ret interface{}, args ...interface{},
-) error {
-	headers, err := ops.AsHeaders()
-	if err != nil {
-		return err
-	}
-	link := createSprocLink(dbName, colName, sprocName)
-	_, err = c.create(ctx, link, args, ret, headers)
-	return err
-}
-
-// ExecuteStoredProcedure2 executes the procedure and returns metadata about the
+// ExecuteStoredProcedure executes the procedure and returns metadata about the
 // call, or error if the procedure failed.
-func (c *Client) ExecuteStoredProcedure2(
+func (c *Client) ExecuteStoredProcedure(
 	ctx context.Context, dbName, colName, sprocName string,
 	ops ExecuteStoredProcedureOptions,
 	ret interface{}, args ...interface{},

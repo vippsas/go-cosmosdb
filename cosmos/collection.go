@@ -200,7 +200,7 @@ func (c Collection) Query(query string, entities interface{}) (cosmosapi.QueryDo
 }
 
 // Execute a StoredProcedure on the collection
-func (c Collection) ExecuteSproc(sprocName string, partitionKeyValue interface{}, ret interface{}, args ...interface{}) error {
+func (c Collection) ExecuteSproc(sprocName string, partitionKeyValue interface{}, ret interface{}, args ...interface{}) (*cosmosapi.ExecuteStoredProcedureResponse, error) {
 	opts := cosmosapi.ExecuteStoredProcedureOptions{PartitionKeyValue: partitionKeyValue}
 	return c.Client.ExecuteStoredProcedure(
 		c.GetContext(), c.DbName, c.Name, sprocName, opts, ret, args...)

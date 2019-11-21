@@ -36,7 +36,7 @@ type Client interface {
 	GetCollection(ctx context.Context, dbName, colName string) (*cosmosapi.Collection, error)
 	DeleteCollection(ctx context.Context, dbName, colName string) error
 	DeleteDatabase(ctx context.Context, dbName string, ops *cosmosapi.RequestOptions) error
-	ExecuteStoredProcedure(ctx context.Context, dbName, colName, sprocName string, ops cosmosapi.ExecuteStoredProcedureOptions, ret interface{}, args ...interface{}) error
+	ExecuteStoredProcedure(ctx context.Context, dbName, colName, sprocName string, ops cosmosapi.ExecuteStoredProcedureOptions, ret interface{}, args ...interface{}) (*cosmosapi.ExecuteStoredProcedureResponse, error)
 	GetPartitionKeyRanges(ctx context.Context, dbName, colName string, options *cosmosapi.GetPartitionKeyRangesOptions) (cosmosapi.GetPartitionKeyRangesResponse, error)
 	ListOffers(ctx context.Context, ops *cosmosapi.RequestOptions) (*cosmosapi.Offers, error)
 	ReplaceOffer(ctx context.Context, offerOps cosmosapi.OfferReplaceOptions, ops *cosmosapi.RequestOptions) (*cosmosapi.Offer, error)
