@@ -78,6 +78,11 @@ type ExecuteStoredProcedureOptions struct {
 	PartitionKeyValue interface{}
 }
 
+// ExecuteStoredProcedureResponse returns metadata about the procedure call.
+type ExecuteStoredProcedureResponse struct {
+	ResponseBase
+}
+
 func (ops ExecuteStoredProcedureOptions) AsHeaders() (map[string]string, error) {
 	headers := make(map[string]string)
 	if ops.PartitionKeyValue != nil {
@@ -90,6 +95,10 @@ func (ops ExecuteStoredProcedureOptions) AsHeaders() (map[string]string, error) 
 	return headers, nil
 }
 
+// ExecuteStoredProcedure executes the procedure and returns an error if the
+// procedure failed.
+//
+// Deprecated: Use ExecuteStoredProcedure2 instead.
 func (c *Client) ExecuteStoredProcedure(
 	ctx context.Context, dbName, colName, sprocName string,
 	ops ExecuteStoredProcedureOptions,
@@ -102,4 +111,28 @@ func (c *Client) ExecuteStoredProcedure(
 	link := createSprocLink(dbName, colName, sprocName)
 	_, err = c.create(ctx, link, args, ret, headers)
 	return err
+}
+
+// ExecuteStoredProcedure2 executes the procedure and returns metadata about the
+// call, or error if the procedure failed.
+func (c *Client) ExecuteStoredProcedure2(
+	ctx context.Context, dbName, colName, sprocName string,
+	ops ExecuteStoredProcedureOptions,
+	ret interface{}, args ...interface{},
+) (*ExecuteStoredProcedureResponse, error) {
+	headers, err := ops.AsHeaders()
+	if err != nil {
+		return nil, err
+	}
+	link := createSprocLink(dbName, colName, sprocName)
+	httpResp, err := c.create(ctx, link, args, ret, headers)
+	if err != nil {
+		return nil, err
+	}
+	resp := &ExecuteStoredProcedureResponse{}
+	resp.ResponseBase, err = parseHttpResponse(httpResp)
+	if err != nil {
+		return nil, err
+	}
+	return resp, nil
 }
