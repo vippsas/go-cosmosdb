@@ -2,9 +2,10 @@ package cosmosapi
 
 import (
 	"context"
-	"github.com/pkg/errors"
 	"net/http"
 	"strconv"
+
+	"github.com/pkg/errors"
 )
 
 type ListCollectionsOptions struct {
@@ -61,11 +62,11 @@ func (r ListCollectionsResponse) parse(httpResponse *http.Response) (ListCollect
 	r.Continuation = httpResponse.Header.Get(HEADER_CONTINUATION)
 	r.Etag = httpResponse.Header.Get(HEADER_ETAG)
 	if _, ok := httpResponse.Header[HEADER_REQUEST_CHARGE]; ok {
-		if requestCharge, err := strconv.ParseFloat(httpResponse.Header.Get(HEADER_REQUEST_CHARGE), 64); err != nil {
+		requestCharge, err := strconv.ParseFloat(httpResponse.Header.Get(HEADER_REQUEST_CHARGE), 64)
+		if err != nil {
 			return r, errors.WithStack(err)
-		} else {
-			r.RequestCharge = requestCharge
 		}
+		r.RequestCharge = requestCharge
 	}
 	return r, nil
 }
