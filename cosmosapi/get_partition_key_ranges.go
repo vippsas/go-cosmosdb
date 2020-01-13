@@ -85,3 +85,86 @@ func (r *GetPartitionKeyRangesResponse) parseHeaders(httpResponse *http.Response
 	}
 	return nil
 }
+
+// NewPartitionKeyRangesPaginator returns a paginator for ListObjectsV2. Use the
+// Next method to get the next page, and CurrentPage to get the current response
+// page from the paginator. Next will return false if there are no more pages,
+// or an error was encountered.
+//
+// Note: This operation can generate multiple requests to a service.
+//
+//   // Example iterating over pages.
+//   p := client.NewPartitionKeyRangesPaginator(input)
+//
+//   for p.Next() {
+//       err, page := p.CurrentPage(context.TODO())
+//       if err != nil {
+//         return err
+//       }
+//   }
+//
+func (c *Client) NewPartitionKeyRangesPaginator(databaseName, collectionName string, options *GetPartitionKeyRangesOptions) *PartitionKeyRangesPaginator {
+	var opts GetPartitionKeyRangesOptions
+	if options != nil {
+		opts = *options
+	}
+	return &PartitionKeyRangesPaginator{
+		databaseName:   databaseName,
+		collectionName: collectionName,
+		options:        opts,
+		client:         c,
+	}
+}
+
+// PartitionKeyRangesPaginator is a paginator over the "Get Partition key
+// ranges" API endpoint. This paginator is not threadsafe.
+type PartitionKeyRangesPaginator struct {
+	err         error
+	currentPage GetPartitionKeyRangesResponse
+	nextPageIdx int
+	nextCalled  bool
+	// ^ this name is somewhat of a misnomer, it's not updated if we have no
+	// continuation.
+
+	client         *Client
+	databaseName   string
+	collectionName string
+	options        GetPartitionKeyRangesOptions
+}
+
+// CurrentPage returns the current page of partition key ranges. Panics if
+// Next() has not yet been called.
+func (p *PartitionKeyRangesPaginator) CurrentPage(ctx context.Context) (GetPartitionKeyRangesResponse, error) {
+	if p.nextPageIdx == 0 {
+		panic("PartitionKeyRangesPaginator: Must call Next before CurrentPage")
+	}
+	if p.nextCalled || p.err != nil { // retry if previous call gave an error
+		p.nextCalled = false
+		p.currentPage, p.err = p.client.GetPartitionKeyRanges(ctx, p.databaseName, p.collectionName, &p.options)
+		if p.err == nil {
+			p.options.Continuation = p.currentPage.Continuation
+		}
+	}
+	return p.currentPage, p.err
+}
+
+// Next returns true if there are more pages to be read, false otherwise.
+func (p *PartitionKeyRangesPaginator) Next() bool {
+	if p.err != nil {
+		return false
+	}
+	if p.nextCalled {
+		return true
+	}
+	if p.nextPageIdx == 0 {
+		p.nextCalled = true
+		p.nextPageIdx++
+		return true
+	}
+	// Check if we have a continuation token
+	if p.options.Continuation != "" {
+		p.nextCalled = true
+		return true
+	}
+	return false
+}
