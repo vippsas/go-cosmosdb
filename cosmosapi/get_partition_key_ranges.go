@@ -15,6 +15,14 @@ func (c *Client) GetPartitionKeyRanges(
 ) (response GetPartitionKeyRangesResponse, err error) {
 	link := CreateCollLink(databaseName, collectionName) + "/pkranges"
 	var responseBody getPartitionKeyRangesResponseBody
+	if options != nil {
+		if options.MaxItemCount == 0 && options.Continuation == "" {
+			// Caller presumably used the old version of the library, which didn't
+			// take continuations into account. If they haven't set MaxItemCount or
+			// Continuation, we assume they want all items.
+			return c.getAllPartitionKeyRanges(ctx, databaseName, collectionName, options)
+		}
+	}
 	headers, err := options.AsHeaders()
 	if err != nil {
 		return response, err
@@ -84,6 +92,23 @@ func (r *GetPartitionKeyRangesResponse) parseHeaders(httpResponse *http.Response
 		r.RequestCharge = requestCharge
 	}
 	return nil
+}
+
+func (c *Client) getAllPartitionKeyRanges(ctx context.Context, databaseName, collectionName string, options *GetPartitionKeyRangesOptions) (GetPartitionKeyRangesResponse, error) {
+	options.MaxItemCount = -1
+	options.Continuation = ""
+	p := c.NewPartitionKeyRangesPaginator(databaseName, collectionName, options)
+	var pkranges GetPartitionKeyRangesResponse
+	for p.Next() {
+		newPk, err := p.CurrentPage(ctx)
+		if err != nil {
+			return pkranges, err
+		}
+		newPk.PartitionKeyRanges = append(pkranges.PartitionKeyRanges, newPk.PartitionKeyRanges...)
+		newPk.RequestCharge += pkranges.RequestCharge
+		pkranges = newPk
+	}
+	return pkranges, nil
 }
 
 // NewPartitionKeyRangesPaginator returns a paginator for ListObjectsV2. Use the
