@@ -144,12 +144,11 @@ func (c *Client) NewPartitionKeyRangesPaginator(databaseName, collectionName str
 // PartitionKeyRangesPaginator is a paginator over the "Get Partition key
 // ranges" API endpoint. This paginator is not threadsafe.
 type PartitionKeyRangesPaginator struct {
+	shouldFetchPage bool
+	hasPage         bool
+
 	err         error
 	currentPage GetPartitionKeyRangesResponse
-	nextPageIdx int
-	nextCalled  bool
-	// ^ this name is somewhat of a misnomer, it's not updated if we have no
-	// continuation.
 
 	client         *Client
 	databaseName   string
@@ -160,35 +159,34 @@ type PartitionKeyRangesPaginator struct {
 // CurrentPage returns the current page of partition key ranges. Panics if
 // Next() has not yet been called.
 func (p *PartitionKeyRangesPaginator) CurrentPage(ctx context.Context) (GetPartitionKeyRangesResponse, error) {
-	if p.nextPageIdx == 0 {
+	if !p.shouldFetchPage && !p.hasPage {
 		panic("PartitionKeyRangesPaginator: Must call Next before CurrentPage")
 	}
-	if p.nextCalled || p.err != nil { // retry if previous call gave an error
-		p.nextCalled = false
+	if p.shouldFetchPage { // includes retries if the previous call errored out
 		p.currentPage, p.err = p.client.GetPartitionKeyRanges(ctx, p.databaseName, p.collectionName, &p.options)
 		if p.err == nil {
+			p.shouldFetchPage = false
+			p.hasPage = true
 			p.options.Continuation = p.currentPage.Continuation
 		}
 	}
 	return p.currentPage, p.err
 }
 
-// Next returns true if there are more pages to be read, false otherwise.
+// Next returns true if there are more pages to be read, and false if the
+// previous CurrentPage call returned an error, or if there are no more pages to
+// be read.
 func (p *PartitionKeyRangesPaginator) Next() bool {
 	if p.err != nil {
 		return false
 	}
-	if p.nextCalled {
-		return true
-	}
-	if p.nextPageIdx == 0 {
-		p.nextCalled = true
-		p.nextPageIdx++
+	if !p.hasPage {
+		p.shouldFetchPage = true
 		return true
 	}
 	// Check if we have a continuation token
 	if p.options.Continuation != "" {
-		p.nextCalled = true
+		p.shouldFetchPage = true
 		return true
 	}
 	return false
