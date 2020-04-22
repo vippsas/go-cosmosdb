@@ -228,5 +228,9 @@ func (c Client) handleResponse(ctx context.Context, req *http.Request, resp *htt
 	if resp.ContentLength == 0 {
 		return nil
 	}
-	return readJson(resp.Body, ret)
+	err = readJson(resp.Body, ret)
+	// even if JSON parsing failed, we still want to consume all bytes from Body
+	// in order to reuse the connection.
+	io.Copy(ioutil.Discard, resp.Body)
+	return err
 }
