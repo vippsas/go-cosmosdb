@@ -207,7 +207,7 @@ func (c *Client) do(ctx context.Context, r *http.Request, data interface{}) (*ht
 	return resp, ErrMaxRetriesExceeded
 }
 
-func (c Client) handleResponse(ctx context.Context, req *http.Request, resp *http.Response, ret interface{}) error {
+func (c *Client) handleResponse(ctx context.Context, req *http.Request, resp *http.Response, ret interface{}) error {
 	defer resp.Body.Close()
 	if ResponseHook != nil {
 		ResponseHook(ctx, req.Method, resp.Header)
